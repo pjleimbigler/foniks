@@ -1,0 +1,23 @@
+# Create a new Vite project
+npm create vite@latest phonics-playground -- --template react
+
+# Move into the project directory
+cd phonics-playground
+
+# Install our dependencies
+npm install react react-dom @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities styled-components
+
+# Create the components directory
+mkdir -p src/components
+
+npm init -y
+npm install
+npm run dev 
+ls src/components/ 
+touch src/components/TileGrid.jsx src/components/Tile.jsx src/components/DropZone.jsx 
+cat src/components/TileGrid.jsx 
+ls -l src/components/ 
+rm src/App.css 
+touch vite.config.js 
+touch index.html 
+touch ROADMAP.md 
