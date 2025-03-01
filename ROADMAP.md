@@ -1,50 +1,54 @@
 # Foniks Development Roadmap
 
-## Current Sprint
+## Completed Features
 - [x] Basic project setup with Vite + React
-- [x] Initial drag-and-drop functionality
-- [ ] Ability to remove tiles from the drop zone
-- [ ] Tile snapping behavior (left/right/gap filling)
-- [ ] Text-to-speech integration with "Speak" button
-- [ ] Clear button functionality
+- [x] Drag-and-drop functionality
+- [x] Ability to remove tiles from the drop zone
+- [x] Text-to-speech integration with "Speak" button
+- [x] Clear button functionality
+- [x] Emoji-grapheme pairs display
+- [x] "Raining emoji" animation on word formation
+- [x] Click sound on tile placement
+- [x] Visual feedback improvements
+- [x] Simplified codebase architecture
+
+## Current Sprint
+- [ ] Tile reordering in drop zone
+- [ ] Remove tiles from middle of sequence
+- [ ] Toggle between letters and graphemes
+- [ ] Difficulty levels based on word length
 
 ## Upcoming Features
 ### High Priority
-- [ ] Tile reordering in drop zone
-- [ ] Remove tiles from middle of sequence
-- [ ] Emoji-grapheme pairs display
-- [ ] Toggle between letters and graphemes
-- [ ] Click sound on tile placement
-- [ ] "Raining emoji" animation on correct word formation
-
-### Medium Priority
-- [ ] Difficulty levels based on word length
-- [ ] Save progress locally
+- [ ] Word validation against dictionary
+- [ ] Correct/incorrect word feedback
+- [ ] More engaging animations and sounds
 - [ ] Touch screen optimization for iPad
 - [ ] Keyboard navigation support
-- [ ] Visual feedback improvements
+
+### Medium Priority
+- [ ] Save progress locally
+- [ ] Custom word/grapheme sets
+- [ ] Multiple language support
+- [ ] Achievement system
+- [ ] Phonics rules explanations
 
 ### Future Considerations
 - [ ] Backend integration for progress tracking
 - [ ] User accounts
-- [ ] Custom word/grapheme sets
-- [ ] Multiple language support
 - [ ] Teacher/Parent dashboard
-- [ ] Achievement system
+- [ ] Multiplayer mode
+- [ ] Progressive difficulty levels
 
-## Completed Features
-- [x] Project initialization
-- [x] Basic drag and drop implementation
-- [x] Initial UI layout
-
-## Technical Debt & Improvements
+## Technical Improvements
 - [ ] Add TypeScript
 - [ ] Implement testing framework
-- [ ] Improve component documentation
 - [ ] Optimize performance for large tile sets
 - [ ] Accessibility improvements
+- [ ] PWA support for offline use
 
 ## Notes
-- Consider using Web Speech API for text-to-speech
+- Consider adding more educational content about phonics rules
 - Research child-friendly fonts and color schemes
-- Investigate best practices for educational game UX 
+- Investigate best practices for educational game UX
+- Consider adding audio recording for pronunciation practice 
