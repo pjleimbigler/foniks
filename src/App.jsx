@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { DndContext, useDraggable, useDroppable, closestCenter, pointerWithin } from '@dnd-kit/core';
+import { 
+  DndContext, 
+  useDraggable, 
+  useDroppable, 
+  closestCenter, 
+  pointerWithin,
+  TouchSensor,
+  MouseSensor,
+  useSensor,
+  useSensors
+} from '@dnd-kit/core';
 import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -74,6 +84,18 @@ function App() {
   
   // Create the full alphabet with 9 copies of each letter
   const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+  
+  // Configure sensors for both mouse and touch with proper options
+  const sensors = useSensors(
+    useSensor(MouseSensor),
+    useSensor(TouchSensor, {
+      // Prevent scrolling while dragging
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    })
+  );
   
   // Initialize tile counts on first render
   useEffect(() => {
@@ -243,7 +265,11 @@ function App() {
   };
 
   return (
-    <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
+    <DndContext 
+      sensors={sensors}
+      onDragEnd={handleDragEnd} 
+      collisionDetection={closestCenter}
+    >
       <div style={{
         minHeight: '100vh',
         padding: '20px',
