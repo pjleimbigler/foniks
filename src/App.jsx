@@ -89,10 +89,10 @@ function App() {
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor, {
-      // Prevent scrolling while dragging
+      // Optimize for mobile - reduce delay for more responsive feel
       activationConstraint: {
-        delay: 250,
-        tolerance: 5,
+        delay: 150, // Reduced from 250ms for more responsive feel
+        tolerance: 8, // Increased slightly for better touch accuracy
       },
     })
   );
@@ -272,21 +272,29 @@ function App() {
     >
       <div style={{
         minHeight: '100vh',
-        padding: '20px',
+        padding: '10px', // Reduced padding for mobile
         backgroundColor: '#FFF9E6',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '2rem',
+        gap: '1.5rem', // Reduced gap for mobile
         fontFamily: 'Comic Sans MS, Chalkboard SE, Arial, sans-serif',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        WebkitTouchCallout: 'none', /* iOS Safari */
+        WebkitUserSelect: 'none',    /* Safari */
+        KhtmlUserSelect: 'none',     /* Konqueror HTML */
+        MozUserSelect: 'none',       /* Firefox */
+        msUserSelect: 'none',        /* Internet Explorer/Edge */
+        userSelect: 'none',          /* Non-prefixed version */
+        touchAction: 'manipulation', /* Disable double-tap to zoom */
       }}>
         <h1 style={{ 
           color: '#FF6B6B', 
           textAlign: 'center',
-          fontSize: '2.5rem',
-          textShadow: '2px 2px 0px #FFE66D'
+          fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', // Responsive font size
+          textShadow: '2px 2px 0px #FFE66D',
+          margin: '0.5rem 0' // Add margin for better spacing on mobile
         }}>
           Phonics Playground
         </h1>
@@ -296,7 +304,7 @@ function App() {
           maxWidth: '800px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '2rem'
+          gap: '1.5rem' // Reduced gap for mobile
         }}>
           <DropZone 
             placedTiles={placedTiles} 
@@ -306,7 +314,9 @@ function App() {
           <div style={{
             display: 'flex',
             justifyContent: 'center',
-            gap: '1rem'
+            gap: '0.8rem', // Reduced gap for mobile
+            flexWrap: 'wrap', // Allow buttons to wrap on very small screens
+            padding: '0 10px' // Add padding for touch targets
           }}>
             <button 
               onClick={handleSpeakWord}
@@ -316,12 +326,14 @@ function App() {
                 color: 'white',
                 border: 'none',
                 borderRadius: '50px',
-                fontSize: '1.2rem',
+                fontSize: 'clamp(1rem, 4vw, 1.2rem)', // Responsive font size
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 boxShadow: '0 4px 0 #2C8C8D',
                 transition: 'all 0.1s ease',
                 transform: 'translateY(0)',
+                minWidth: '140px', // Ensure minimum touch target size
+                minHeight: '44px', // Ensure minimum touch target size
                 ':active': {
                   transform: 'translateY(4px)',
                   boxShadow: '0 0 0 #2C8C8D',
@@ -340,12 +352,14 @@ function App() {
                 color: 'white',
                 border: 'none',
                 borderRadius: '50px',
-                fontSize: '1.2rem',
+                fontSize: 'clamp(1rem, 4vw, 1.2rem)', // Responsive font size
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 boxShadow: '0 4px 0 #C74B4B',
                 transition: 'all 0.1s ease',
                 transform: 'translateY(0)',
+                minWidth: '140px', // Ensure minimum touch target size
+                minHeight: '44px', // Ensure minimum touch target size
                 ':active': {
                   transform: 'translateY(4px)',
                   boxShadow: '0 0 0 #C74B4B',
@@ -444,14 +458,34 @@ function App() {
   );
 }
 
-// New AlphabetTileGrid component for stacked letters
+// Update AlphabetTileGrid for better mobile layout
 function AlphabetTileGrid({ alphabet, tileCounts }) {
+  // Determine if we're on a small screen
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth < 500);
+    };
+    
+    // Check on mount
+    checkScreenSize();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkScreenSize);
+    
+    // Clean up
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
-      gap: '1rem',
-      padding: '1.5rem',
+      gridTemplateColumns: isSmallScreen 
+        ? 'repeat(auto-fill, minmax(60px, 1fr))' // Smaller tiles on mobile
+        : 'repeat(auto-fill, minmax(80px, 1fr))',
+      gap: isSmallScreen ? '0.5rem' : '1rem', // Smaller gap on mobile
+      padding: isSmallScreen ? '1rem' : '1.5rem',
       background: 'white',
       borderRadius: '20px',
       boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
@@ -462,22 +496,23 @@ function AlphabetTileGrid({ alphabet, tileCounts }) {
           key={letter}
           letter={letter}
           count={tileCounts[letter] || 0}
+          isSmallScreen={isSmallScreen}
         />
       ))}
     </div>
   );
 }
 
-// LetterStack component for stacked tiles
-function LetterStack({ letter, count }) {
+// Update LetterStack to handle small screens
+function LetterStack({ letter, count, isSmallScreen }) {
   // Determine how many tiles to show in the stack (max 3 visually)
   const visibleCount = Math.min(count, 3);
   
   return (
     <div style={{
       position: 'relative',
-      height: '80px',
-      width: '70px',
+      height: isSmallScreen ? '65px' : '80px',
+      width: isSmallScreen ? '60px' : '70px',
     }}>
       {/* Show stacked tiles based on visible count */}
       {Array.from({ length: visibleCount }).map((_, index) => {
@@ -494,8 +529,11 @@ function LetterStack({ letter, count }) {
               top: `${offset}px`,
               left: `${offset}px`,
               zIndex: index,
+              width: isSmallScreen ? '60px' : '70px',
+              height: isSmallScreen ? '60px' : '70px',
             }}
             disabled={index !== visibleCount - 1} // Only the top tile is draggable
+            isSmallScreen={isSmallScreen}
           />
         );
       })}
@@ -526,8 +564,8 @@ function LetterStack({ letter, count }) {
   );
 }
 
-// StackedTile component
-function StackedTile({ id, letter, style, disabled }) {
+// Update StackedTile for responsive sizing
+function StackedTile({ id, letter, style, disabled, isSmallScreen }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: id,
     disabled,
@@ -543,18 +581,21 @@ function StackedTile({ id, letter, style, disabled }) {
       style={{
         ...style,
         ...tileStyle,
-        width: '70px',
-        height: '70px',
+        width: isSmallScreen ? '60px' : '70px',
+        height: isSmallScreen ? '60px' : '70px',
         backgroundColor: isDragging ? '#B8E6B3' : '#A8D5E5',
         borderRadius: '12px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '2.5rem',
+        fontSize: isSmallScreen ? '2rem' : '2.5rem', // Smaller font on mobile
         fontWeight: 'bold',
         color: '#333333',
         cursor: disabled ? 'default' : 'grab',
         userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+        touchAction: 'manipulation',
         transition: isDragging ? 'none' : 'background-color 0.2s, box-shadow 0.2s',
         boxShadow: '0 4px 0 rgba(0,0,0,0.1)',
         border: '3px solid rgba(255,255,255,0.5)',
@@ -567,8 +608,8 @@ function StackedTile({ id, letter, style, disabled }) {
   );
 }
 
-// Tile component
-function Tile({ id, letter }) {
+// Update Tile component for responsive sizing
+function Tile({ id, letter, isSmallScreen }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: id,
   });
@@ -582,18 +623,21 @@ function Tile({ id, letter }) {
       ref={setNodeRef}
       style={{
         ...style,
-        width: '70px',
-        height: '70px',
+        width: isSmallScreen ? '60px' : '70px',
+        height: isSmallScreen ? '60px' : '70px',
         backgroundColor: isDragging ? '#B8E6B3' : '#A8D5E5',
         borderRadius: '12px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '2.5rem',
+        fontSize: isSmallScreen ? '2rem' : '2.5rem', // Smaller font on mobile
         fontWeight: 'bold',
         color: '#333333',
         cursor: 'grab',
         userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+        touchAction: 'manipulation',
         transition: isDragging ? 'none' : 'background-color 0.2s, box-shadow 0.2s',
         boxShadow: '0 4px 0 rgba(0,0,0,0.1)',
         border: '3px solid rgba(255,255,255,0.5)',
@@ -606,47 +650,41 @@ function Tile({ id, letter }) {
   );
 }
 
-// TileGrid component
-function TileGrid({ tiles }) {
-  return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
-      gap: '1rem',
-      padding: '1.5rem',
-      background: 'white',
-      borderRadius: '20px',
-      boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-      border: '3px solid #FFE66D',
-    }}>
-      {tiles.map(tile => (
-        <Tile 
-          key={tile.id} 
-          id={tile.id}
-          letter={tile.letter}
-        />
-      ))}
-    </div>
-  );
-}
-
-// DropZone component
+// Update DropZone for better mobile experience
 function DropZone({ placedTiles, onRemoveTile }) {
   const { isOver, setNodeRef } = useDroppable({
     id: 'dropzone',
   });
+  
+  // Determine if we're on a small screen
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth < 500);
+    };
+    
+    // Check on mount
+    checkScreenSize();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkScreenSize);
+    
+    // Clean up
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   return (
     <div 
       ref={setNodeRef} 
       style={{
-        minHeight: '120px',
+        minHeight: '100px', // Slightly smaller on mobile
         backgroundColor: 'white',
         border: `4px dashed ${isOver ? '#45B7B8' : '#FFE66D'}`,
         borderRadius: '20px',
         display: 'flex',
         alignItems: 'center',
-        padding: '1.5rem',
+        padding: isSmallScreen ? '1rem' : '1.5rem',
         gap: '0.25rem',
         transition: 'border-color 0.3s ease',
         position: 'relative',
@@ -659,10 +697,12 @@ function DropZone({ placedTiles, onRemoveTile }) {
         <div style={{ 
           color: '#999', 
           padding: '1rem',
-          fontSize: '1.2rem',
-          fontStyle: 'italic'
+          fontSize: isSmallScreen ? '1rem' : '1.2rem',
+          fontStyle: 'italic',
+          textAlign: 'center',
+          width: '100%'
         }}>
-          Drag letters here to build a word (max 9 tiles)
+          Drag letters here to build a word
         </div>
       )}
       
@@ -670,7 +710,7 @@ function DropZone({ placedTiles, onRemoveTile }) {
         {placedTiles.map((tileId, index) => (
           <React.Fragment key={`fragment-${tileId}-${index}`}>
             {/* Drop position indicator before each tile */}
-            {index === 0 && <DropPositionIndicator index={0} />}
+            {index === 0 && <DropPositionIndicator index={0} isSmallScreen={isSmallScreen} />}
             
             <SortableTile 
               key={`${tileId}-${index}`}
@@ -678,22 +718,23 @@ function DropZone({ placedTiles, onRemoveTile }) {
               letter={tileId.toUpperCase()}
               index={index}
               onRemoveTile={onRemoveTile}
+              isSmallScreen={isSmallScreen}
             />
             
             {/* Drop position indicator after each tile */}
-            <DropPositionIndicator index={index + 1} />
+            <DropPositionIndicator index={index + 1} isSmallScreen={isSmallScreen} />
           </React.Fragment>
         ))}
         
         {/* If no tiles, add a single drop position */}
-        {placedTiles.length === 0 && <DropPositionIndicator index={0} />}
+        {placedTiles.length === 0 && <DropPositionIndicator index={0} isSmallScreen={isSmallScreen} />}
       </SortableContext>
     </div>
   );
 }
 
-// New component for drop position indicators
-function DropPositionIndicator({ index }) {
+// Update DropPositionIndicator for responsive sizing
+function DropPositionIndicator({ index, isSmallScreen }) {
   const { isOver, setNodeRef } = useDroppable({
     id: `position-${index}`,
   });
@@ -703,7 +744,7 @@ function DropPositionIndicator({ index }) {
       ref={setNodeRef}
       style={{
         width: '5px',
-        height: '70px',
+        height: isSmallScreen ? '60px' : '70px',
         backgroundColor: isOver ? 'rgba(69, 183, 184, 0.3)' : 'transparent',
         borderRadius: '4px',
         transition: 'background-color 0.2s ease',
@@ -712,8 +753,8 @@ function DropPositionIndicator({ index }) {
   );
 }
 
-// Replace DraggableTile with SortableTile
-function SortableTile({ id, letter, index, onRemoveTile }) {
+// Update SortableTile for responsive sizing
+function SortableTile({ id, letter, index, onRemoveTile, isSmallScreen }) {
   const { 
     attributes, 
     listeners, 
@@ -726,18 +767,21 @@ function SortableTile({ id, letter, index, onRemoveTile }) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    width: '70px',
-    height: '70px',
+    width: isSmallScreen ? '60px' : '70px',
+    height: isSmallScreen ? '60px' : '70px',
     backgroundColor: isDragging ? '#B8E6B3' : '#D7C0E0',
     borderRadius: '12px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '2.5rem',
+    fontSize: isSmallScreen ? '2rem' : '2.5rem', // Smaller font on mobile
     fontWeight: 'bold',
     color: '#333333',
     cursor: 'grab',
     userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
+    touchAction: 'manipulation',
     zIndex: isDragging ? 10 : 1,
     boxShadow: isDragging 
       ? '0 8px 16px rgba(0,0,0,0.2)' 
