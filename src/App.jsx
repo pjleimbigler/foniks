@@ -71,80 +71,89 @@ const WORD_EMOJIS = {
   nose: '👃',
   mouth: '👄',
   tooth: '🦷',
-  tongue: '👅',
-  hair: '👱‍♂️',
-  hat: '🎩',
+  tongue: '👅'
 };
 
 function App() {
   const [placedTiles, setPlacedTiles] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentWord, setCurrentWord] = useState('');
-  const [tileCounts, setTileCounts] = useState({});
   
-  // Create the full alphabet with 9 copies of each letter
+  // Create the full alphabet
   const alphabet = 'abcdefghijklmnopqrstuvwxyz';
   
   // Configure sensors for both mouse and touch with proper options
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor, {
-      // Optimize for mobile - reduce delay for more responsive feel
       activationConstraint: {
-        delay: 150, // Reduced from 250ms for more responsive feel
-        tolerance: 8, // Increased slightly for better touch accuracy
+        delay: 250,
+        tolerance: 5,
       },
     })
   );
   
-  // Initialize tile counts on first render
-  useEffect(() => {
-    const initialCounts = {};
-    for (const letter of alphabet) {
-      initialCounts[letter] = 3; // Keep at 3 copies of each letter
-    }
-    setTileCounts(initialCounts);
-  }, []);
-  
   const handleDragEnd = (event) => {
+    console.log('=== Drag End Event ===');
+    console.log('Event:', event);
+    console.log('Active:', event.active);
+    console.log('Over:', event.over);
+    
     const { active, over } = event;
     
-    if (over?.id === 'dropzone' && active?.id) {
-      // Extract the letter from the active.id (which might be like "a-2")
-      const letter = active.id.split('-')[0];
+    // If no active item, return early
+    if (!active) {
+      console.log('No active item, returning');
+      return;
+    }
+    
+    // Handle click events (no activatorEvent)
+    if (!event.activatorEvent) {
+      console.log('Click event detected');
+      if (placedTiles.length >= 9) return;
       
-      // Check if we already have 9 tiles in the drop zone
+      const uniqueId = `${active.id.split('-')[0]}-${Date.now()}`;
+      setPlacedTiles(prev => {
+        const newTiles = [...prev, uniqueId];
+        console.log('Added tile via click:', uniqueId);
+        return newTiles;
+      });
+      playSound('place');
+      return;
+    }
+    
+    // Handle drag events
+    if (over && (over.id === 'dropzone' || over.id.startsWith('position-'))) {
+      console.log('Valid drop detected:', over.id);
       if (placedTiles.length >= 9) {
-        // Don't add more than 9 tiles
+        console.log('Dropzone full');
         return;
       }
       
-      // Add the letter to placed tiles
-      setPlacedTiles(prev => [...prev, letter]);
+      const letter = active.id.split('-')[0];
+      const uniqueId = `${letter}-${Date.now()}`;
       
-      // Decrease the count for this letter
-      setTileCounts(prev => ({
-        ...prev,
-        [letter]: Math.max(0, prev[letter] - 1)
-      }));
-      
+      if (over.id === 'dropzone') {
+        // Add to end
+        setPlacedTiles(prev => {
+          const newTiles = [...prev, uniqueId];
+          console.log('Added tile via drag:', uniqueId);
+          return newTiles;
+        });
+      } else {
+        // Add at specific position
+        const position = parseInt(over.id.split('-')[1]);
+        setPlacedTiles(prev => {
+          const newTiles = [...prev];
+          newTiles.splice(position, 0, uniqueId);
+          console.log('Added tile at position:', position);
+          return newTiles;
+        });
+      }
       playSound('place');
-    } else if (active?.id && !over?.id && placedTiles.includes(active.id)) {
-      // Handle dragging a tile out of the dropzone
-      const letter = active.id;
-      
-      // Remove the letter from placed tiles
-      setPlacedTiles(prev => prev.filter(tileId => tileId !== letter));
-      
-      // Increase the count for this letter
-      setTileCounts(prev => ({
-        ...prev,
-        [letter]: prev[letter] + 1
-      }));
-      
-      playSound('remove');
-    } else if (over && active && placedTiles.includes(active.id) && placedTiles.includes(over.id)) {
-      // Handle reordering within the dropzone
+    } else if (over && placedTiles.includes(active.id) && placedTiles.includes(over.id)) {
+      // Reorder within dropzone
+      console.log('Reordering tiles');
       const oldIndex = placedTiles.indexOf(active.id);
       const newIndex = placedTiles.indexOf(over.id);
       
@@ -152,64 +161,27 @@ function App() {
         setPlacedTiles(prev => arrayMove(prev, oldIndex, newIndex));
         playSound('place');
       }
-    } else if (over && over.id.startsWith('position-') && active?.id) {
-      // Extract the letter from the active.id (which might be like "a-2")
-      const letter = active.id.split('-')[0];
-      
-      // Check if we already have 9 tiles in the drop zone
-      if (placedTiles.length >= 9) {
-        // Don't add more than 9 tiles
-        return;
-      }
-      
-      // Handle dropping a new tile between existing tiles
-      const positionIndex = parseInt(over.id.split('-')[1]);
-      const newPlacedTiles = [...placedTiles];
-      newPlacedTiles.splice(positionIndex, 0, letter);
-      setPlacedTiles(newPlacedTiles);
-      
-      // Decrease the count for this letter
-      setTileCounts(prev => ({
-        ...prev,
-        [letter]: Math.max(0, prev[letter] - 1)
-      }));
-      
-      playSound('place');
     }
   };
 
   const handleRemoveTile = (index) => {
-    // Get the letter being removed
-    const letter = placedTiles[index];
-    
-    // Remove the letter from placed tiles
     setPlacedTiles(prev => prev.filter((_, i) => i !== index));
-    
-    // Increase the count for this letter
-    setTileCounts(prev => ({
-      ...prev,
-      [letter]: prev[letter] + 1
-    }));
-    
     playSound('remove');
   };
 
   const handleSpeakWord = () => {
     if (placedTiles.length === 0) return;
     
-    const word = placedTiles.join('').toLowerCase();
+    // Extract just the letters from the tile IDs to form the word
+    const word = placedTiles.map(id => id.split('-')[0]).join('').toLowerCase();
     
-    // Only show modal if the word is in our emoji dictionary
     if (WORD_EMOJIS[word]) {
       setCurrentWord(word);
-      
       const utterance = new SpeechSynthesisUtterance(word);
-      utterance.rate = 0.8; // Slightly slower for children
+      utterance.rate = 0.8;
       window.speechSynthesis.speak(utterance);
-      
       setShowModal(true);
     } else {
-      // Just speak the word without showing modal
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.rate = 0.8;
       window.speechSynthesis.speak(utterance);
@@ -221,14 +193,6 @@ function App() {
   };
 
   const handleClearAll = () => {
-    // Return all placed tiles to the available pool
-    placedTiles.forEach(letter => {
-      setTileCounts(prev => ({
-        ...prev,
-        [letter]: prev[letter] + 1
-      }));
-    });
-    
     setPlacedTiles([]);
     playSound('clear');
   };
@@ -267,7 +231,9 @@ function App() {
   return (
     <DndContext 
       sensors={sensors}
-      onDragEnd={handleDragEnd} 
+      onDragEnd={handleDragEnd}
+      onDragStart={(event) => console.log('Drag Start:', event)}
+      onDragMove={(event) => console.log('Drag Move:', event)}
       collisionDetection={closestCenter}
     >
       <div style={{
@@ -373,7 +339,7 @@ function App() {
           
           <AlphabetTileGrid 
             alphabet={alphabet}
-            tileCounts={tileCounts}
+            onDragEnd={handleDragEnd}
           />
         </div>
         
@@ -458,9 +424,8 @@ function App() {
   );
 }
 
-// Update AlphabetTileGrid for better mobile layout
-function AlphabetTileGrid({ alphabet, tileCounts }) {
-  // Determine if we're on a small screen
+// Update AlphabetTileGrid to remove tileCounts
+function AlphabetTileGrid({ alphabet, onDragEnd }) {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   
   useEffect(() => {
@@ -468,13 +433,8 @@ function AlphabetTileGrid({ alphabet, tileCounts }) {
       setIsSmallScreen(window.innerWidth < 500);
     };
     
-    // Check on mount
     checkScreenSize();
-    
-    // Add resize listener
     window.addEventListener('resize', checkScreenSize);
-    
-    // Clean up
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
@@ -482,9 +442,9 @@ function AlphabetTileGrid({ alphabet, tileCounts }) {
     <div style={{
       display: 'grid',
       gridTemplateColumns: isSmallScreen 
-        ? 'repeat(auto-fill, minmax(60px, 1fr))' // Smaller tiles on mobile
+        ? 'repeat(auto-fill, minmax(60px, 1fr))'
         : 'repeat(auto-fill, minmax(80px, 1fr))',
-      gap: isSmallScreen ? '0.5rem' : '1rem', // Smaller gap on mobile
+      gap: isSmallScreen ? '0.5rem' : '1rem',
       padding: isSmallScreen ? '1rem' : '1.5rem',
       background: 'white',
       borderRadius: '20px',
@@ -495,85 +455,59 @@ function AlphabetTileGrid({ alphabet, tileCounts }) {
         <LetterStack 
           key={letter}
           letter={letter}
-          count={tileCounts[letter] || 0}
           isSmallScreen={isSmallScreen}
+          onDragEnd={onDragEnd}
         />
       ))}
     </div>
   );
 }
 
-// Update LetterStack to handle small screens
-function LetterStack({ letter, count, isSmallScreen }) {
-  // Determine how many tiles to show in the stack (max 3 visually)
-  const visibleCount = Math.min(count, 3);
-  
+// Update LetterStack to remove count-related logic
+function LetterStack({ letter, isSmallScreen, onDragEnd }) {
   return (
     <div style={{
       position: 'relative',
       height: isSmallScreen ? '65px' : '80px',
       width: isSmallScreen ? '60px' : '70px',
     }}>
-      {/* Show stacked tiles based on visible count */}
-      {Array.from({ length: visibleCount }).map((_, index) => {
-        // Calculate offset for stacking effect
-        const offset = (2 - index) * 3;
-        
-        return (
-          <StackedTile 
-            key={`${letter}-${index}`}
-            id={`${letter}-${index}`}
-            letter={letter.toUpperCase()}
-            style={{
-              position: 'absolute',
-              top: `${offset}px`,
-              left: `${offset}px`,
-              zIndex: index,
-              width: isSmallScreen ? '60px' : '70px',
-              height: isSmallScreen ? '60px' : '70px',
-            }}
-            disabled={index !== visibleCount - 1} // Only the top tile is draggable
-            isSmallScreen={isSmallScreen}
-          />
-        );
-      })}
-      
-      {/* Show count indicator if there are tiles */}
-      {count > 0 && (
-        <div style={{
-          position: 'absolute',
-          top: '-8px',
-          right: '-8px',
-          backgroundColor: '#FF6B6B',
-          color: 'white',
-          borderRadius: '50%',
-          width: '24px',
-          height: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '0.8rem',
-          fontWeight: 'bold',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-          zIndex: 5,
-        }}>
-          {count}
-        </div>
-      )}
+      <StackedTile 
+        letter={letter.toUpperCase()}
+        style={{
+          width: isSmallScreen ? '60px' : '70px',
+          height: isSmallScreen ? '60px' : '70px',
+        }}
+        isSmallScreen={isSmallScreen}
+        onDragEnd={onDragEnd}
+      />
     </div>
   );
 }
 
 // Update StackedTile for responsive sizing
-function StackedTile({ id, letter, style, disabled, isSmallScreen }) {
+function StackedTile({ letter, style, isSmallScreen, onDragEnd }) {
+  // Generate a unique ID for this instance
+  const id = `${letter.toLowerCase()}-source`;
+  
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: id,
-    disabled,
+    id,
   });
 
   const tileStyle = transform ? {
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
   } : undefined;
+
+  const handleClick = (e) => {
+    // Only handle actual clicks, not drag events
+    if (e.type === 'click') {
+      const uniqueId = `${letter.toLowerCase()}-${Date.now()}`;
+      console.log('Click handler called for', letter, 'with ID:', uniqueId);
+      onDragEnd({
+        active: { id: uniqueId },
+        over: { id: 'dropzone' }
+      });
+    }
+  };
 
   return (
     <div
@@ -588,60 +522,21 @@ function StackedTile({ id, letter, style, disabled, isSmallScreen }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: isSmallScreen ? '2rem' : '2.5rem', // Smaller font on mobile
-        fontWeight: 'bold',
-        color: '#333333',
-        cursor: disabled ? 'default' : 'grab',
-        userSelect: 'none',
-        WebkitUserSelect: 'none',
-        WebkitTouchCallout: 'none',
-        touchAction: 'manipulation',
-        transition: isDragging ? 'none' : 'background-color 0.2s, box-shadow 0.2s',
-        boxShadow: '0 4px 0 rgba(0,0,0,0.1)',
-        border: '3px solid rgba(255,255,255,0.5)',
-        opacity: disabled ? 0.8 : 1,
-      }}
-      {...(disabled ? {} : { ...listeners, ...attributes })}
-    >
-      {letter}
-    </div>
-  );
-}
-
-// Update Tile component for responsive sizing
-function Tile({ id, letter, isSmallScreen }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: id,
-  });
-
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-  } : undefined;
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        ...style,
-        width: isSmallScreen ? '60px' : '70px',
-        height: isSmallScreen ? '60px' : '70px',
-        backgroundColor: isDragging ? '#B8E6B3' : '#A8D5E5',
-        borderRadius: '12px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: isSmallScreen ? '2rem' : '2.5rem', // Smaller font on mobile
+        fontSize: isSmallScreen ? '2rem' : '2.5rem',
         fontWeight: 'bold',
         color: '#333333',
         cursor: 'grab',
         userSelect: 'none',
         WebkitUserSelect: 'none',
         WebkitTouchCallout: 'none',
-        touchAction: 'manipulation',
+        touchAction: 'none',
         transition: isDragging ? 'none' : 'background-color 0.2s, box-shadow 0.2s',
-        boxShadow: '0 4px 0 rgba(0,0,0,0.1)',
+        boxShadow: isDragging ? '0 8px 16px rgba(0,0,0,0.2)' : '0 4px 0 rgba(0,0,0,0.1)',
         border: '3px solid rgba(255,255,255,0.5)',
+        position: 'relative',
+        zIndex: isDragging ? 1000 : 1,
       }}
+      onClick={handleClick}
       {...listeners}
       {...attributes}
     >
@@ -656,7 +551,6 @@ function DropZone({ placedTiles, onRemoveTile }) {
     id: 'dropzone',
   });
   
-  // Determine if we're on a small screen
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   
   useEffect(() => {
@@ -664,13 +558,8 @@ function DropZone({ placedTiles, onRemoveTile }) {
       setIsSmallScreen(window.innerWidth < 500);
     };
     
-    // Check on mount
     checkScreenSize();
-    
-    // Add resize listener
     window.addEventListener('resize', checkScreenSize);
-    
-    // Clean up
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
@@ -678,7 +567,7 @@ function DropZone({ placedTiles, onRemoveTile }) {
     <div 
       ref={setNodeRef} 
       style={{
-        minHeight: '100px', // Slightly smaller on mobile
+        minHeight: '100px',
         backgroundColor: 'white',
         border: `4px dashed ${isOver ? '#45B7B8' : '#FFE66D'}`,
         borderRadius: '20px',
@@ -688,52 +577,35 @@ function DropZone({ placedTiles, onRemoveTile }) {
         gap: '0.25rem',
         transition: 'border-color 0.3s ease',
         position: 'relative',
-        flexWrap: 'wrap', // Allow tiles to wrap to next line if needed
+        flexWrap: 'wrap',
       }}
       role="region" 
       aria-label="Letter tiles drop zone"
     >
-      {placedTiles.length === 0 && (
-        <div style={{ 
-          color: '#999', 
-          padding: '1rem',
-          fontSize: isSmallScreen ? '1rem' : '1.2rem',
-          fontStyle: 'italic',
-          textAlign: 'center',
-          width: '100%'
-        }}>
-          Drag letters here to build a word
-        </div>
-      )}
-      
       <SortableContext items={placedTiles} strategy={horizontalListSortingStrategy}>
         {placedTiles.map((tileId, index) => (
           <React.Fragment key={`fragment-${tileId}-${index}`}>
-            {/* Drop position indicator before each tile */}
             {index === 0 && <DropPositionIndicator index={0} isSmallScreen={isSmallScreen} />}
             
             <SortableTile 
               key={`${tileId}-${index}`}
               id={tileId}
-              letter={tileId.toUpperCase()}
+              letter={tileId.split('-')[0].toUpperCase()}
               index={index}
               onRemoveTile={onRemoveTile}
               isSmallScreen={isSmallScreen}
             />
             
-            {/* Drop position indicator after each tile */}
             <DropPositionIndicator index={index + 1} isSmallScreen={isSmallScreen} />
           </React.Fragment>
         ))}
         
-        {/* If no tiles, add a single drop position */}
         {placedTiles.length === 0 && <DropPositionIndicator index={0} isSmallScreen={isSmallScreen} />}
       </SortableContext>
     </div>
   );
 }
 
-// Update DropPositionIndicator for responsive sizing
 function DropPositionIndicator({ index, isSmallScreen }) {
   const { isOver, setNodeRef } = useDroppable({
     id: `position-${index}`,
@@ -743,11 +615,12 @@ function DropPositionIndicator({ index, isSmallScreen }) {
     <div
       ref={setNodeRef}
       style={{
-        width: '5px',
+        width: '8px',
         height: isSmallScreen ? '60px' : '70px',
-        backgroundColor: isOver ? 'rgba(69, 183, 184, 0.3)' : 'transparent',
+        backgroundColor: isOver ? 'rgba(69, 183, 184, 0.5)' : 'transparent',
         borderRadius: '4px',
         transition: 'background-color 0.2s ease',
+        margin: '0 2px',
       }}
     />
   );
