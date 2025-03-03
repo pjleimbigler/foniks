@@ -30,8 +30,11 @@ const ANIMAL_EMOJIS = {
   giraffe: '🦒',
   goat: '🐐',
   lion: '🦁',
+  mouse: '🐭',
   owl: '🦉',
   pig: '🐷',
+  rabbit: '🐰',
+  tiger: '🐯',
   wolf: '🐺',
   yak: '🦬'
 };
