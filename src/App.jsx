@@ -13,65 +13,98 @@ import {
 import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-// Reworked emoji associations for complete words
-const WORD_EMOJIS = {
-  cat: '🐱',
-  dog: '🐶',
-  fish: '🐟',
+// Animal emojis
+const ANIMAL_EMOJIS = {
+  ant: '🐜',
   bear: '🐻',
-  lion: '🦁',
-  wolf: '🐺',
+  bee: '🐝',
+  bird: '🐦',
+  bug: '🐛',
+  cat: '🐱',
+  cow: '🐄',
+  dog: '🐶',
+  duck: '🦆',
+  fish: '🐟',
   fox: '🦊',
+  frog: '🐸',
+  giraffe: '🦒',
+  goat: '🐐',
+  lion: '🦁',
   owl: '🦉',
   pig: '🐷',
-  frog: '🐸',
-  duck: '🦆',
-  bird: '🐦',
-  cow: '🐄',
-  goat: '🐐',
-  ship: '🚢',
-  boat: '⛵',
-  car: '🚗',
-  bus: '🚌',
-  hat: '🎩',
-  sock: '🧦',
-  sun: '☀️',
-  moon: '🌙',
-  star: '⭐',
-  cake: '🎂',
-  gift: '🎁',
-  ball: '🏀',
-  book: '📚',
-  pen: '🖊️',
-  house: '🏠',
-  tree: '🌳',
-  // New simple emoji words
-  bed: '🛏️',
-  bug: '🐛',
-  ant: '🐜',
-  bee: '🐝',
-  egg: '🥚',
-  ice: '🧊',
-  honey: '🍯',
-  key: '🔑',
-  map: '🗺️',
-  nut: '🥜',
-  pea: '🫛',
-  web: '🕸️',
-  yak: '🦬',
-  giraffe: '🦒',
-  kite: '🪁',
-  rain: '🌧️',
-  snow: '❄️',
-  leaf: '🍃',
-  hand: '👋',
-  foot: '🦶',
+  wolf: '🐺',
+  yak: '🦬'
+};
+
+// People and body parts emojis
+const PEOPLE_AND_BODY_EMOJIS = {
   ear: '👂',
   eye: '👁️',
-  nose: '👃',
+  foot: '🦶',
+  hand: '👋',
   mouth: '👄',
-  tooth: '🦷',
-  tongue: '👅'
+  nose: '👃',
+  tongue: '👅',
+  tooth: '🦷'
+};
+
+// Transportation emojis
+const TRANSPORT_EMOJIS = {
+  boat: '⛵',
+  bus: '🚌',
+  car: '🚗',
+  ship: '🚢'
+};
+
+// Object emojis
+const OBJECT_EMOJIS = {
+  ball: '🏀',
+  bed: '🛏️',
+  book: '📚',
+  hat: '🎩',
+  key: '🔑',
+  kite: '🪁',
+  map: '🗺️',
+  pen: '🖊️',
+  sock: '🧦'
+};
+
+// Nature emojis
+const NATURE_EMOJIS = {
+  ice: '🧊',
+  leaf: '🍃',
+  moon: '🌙',
+  rain: '🌧️',
+  snow: '❄️',
+  star: '⭐',
+  sun: '☀️',
+  tree: '🌳',
+  web: '🕸️'
+};
+
+// Food emojis
+const FOOD_EMOJIS = {
+  cake: '🎂',
+  egg: '🥚',
+  honey: '🍯',
+  nut: '🥜',
+  pea: '🫛'
+};
+
+// Places emojis
+const PLACES_EMOJIS = {
+  house: '🏠'
+};
+
+// Combine all categories into WORD_EMOJIS
+const WORD_EMOJIS = {
+  ...ANIMAL_EMOJIS,
+  ...PEOPLE_AND_BODY_EMOJIS,
+  ...TRANSPORT_EMOJIS,
+  ...OBJECT_EMOJIS,
+  ...NATURE_EMOJIS,
+  ...FOOD_EMOJIS,
+  ...PLACES_EMOJIS
 };
 
 function App() {
