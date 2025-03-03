@@ -34,7 +34,7 @@ An interactive phonics learning tool for children ages 4 and up. This web applic
 The application recognizes these words (and shows their corresponding emoji):
 
 ### Animals
-cat, dog, fish, bear, lion, wolf, fox, owl, pig, frog, duck, bird, cow, goat, bug, ant, bee, yak, giraffe
+cat, dog, fish, bear, lion, wolf, fox, owl, pig, frog, duck, bird, cow, goat, bug, ant, bee, yak, giraffe, mouse, rabbit, tiger
 
 ### Body Parts
 hand, foot, ear, eye, nose, mouth, tooth, tongue, hair
