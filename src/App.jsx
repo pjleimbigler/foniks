@@ -1,17 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  DndContext, 
-  useDraggable, 
-  useDroppable, 
-  closestCenter, 
-  pointerWithin,
-  TouchSensor,
-  MouseSensor,
-  useSensor,
-  useSensors
-} from '@dnd-kit/core';
-import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 // Animal emojis
 const ANIMAL_EMOJIS = {
@@ -110,98 +97,87 @@ const WORD_EMOJIS = {
   ...PLACES_EMOJIS
 };
 
+// Add a CSS animation for the tile zoom effect
+const zoomToDestinationKeyframes = `
+@keyframes zoomToDestination {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+`;
+
 function App() {
   const [placedTiles, setPlacedTiles] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentWord, setCurrentWord] = useState('');
+  const [gameMode, setGameMode] = useState('playground'); // 'playground' or 'game'
+  const [currentGameWord, setCurrentGameWord] = useState('');
+  const [currentGameEmoji, setCurrentGameEmoji] = useState('');
+  const [showHints, setShowHints] = useState(true);
+  const [incorrectTiles, setIncorrectTiles] = useState([]);
   
   // Create the full alphabet
   const alphabet = 'abcdefghijklmnopqrstuvwxyz';
   
-  // Configure sensors for both mouse and touch with proper options
-  const sensors = useSensors(
-    useSensor(MouseSensor),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250,
-        tolerance: 5,
-      },
-    })
-  );
+  // Function to select a random word for the game mode
+  const selectRandomWord = () => {
+    const words = Object.keys(WORD_EMOJIS);
+    const randomIndex = Math.floor(Math.random() * words.length);
+    const selectedWord = words[randomIndex];
+    setCurrentGameWord(selectedWord);
+    setCurrentGameEmoji(WORD_EMOJIS[selectedWord]);
+    setIncorrectTiles([]);
+    
+    // Speak the prompt
+    const utterance = new SpeechSynthesisUtterance(`Spell the word: ${selectedWord}`);
+    utterance.rate = 0.8;
+    window.speechSynthesis.speak(utterance);
+  };
   
-  const handleDragEnd = (event) => {
-    console.log('=== Drag End Event ===');
-    console.log('Event:', event);
-    console.log('Active:', event.active);
-    console.log('Over:', event.over);
-    
-    const { active, over } = event;
-    
-    // If no active item, return early
-    if (!active) {
-      console.log('No active item, returning');
+  // Initialize a random word when game mode is selected
+  useEffect(() => {
+    if (gameMode === 'game') {
+      setPlacedTiles([]);
+      setIncorrectTiles([]);
+      selectRandomWord();
+    }
+  }, [gameMode]);
+  
+  const handleAddTile = (letter) => {
+    // Check if we've reached the maximum number of tiles
+    if (placedTiles.length >= 9) {
+      console.log('Maximum tiles reached (9)');
       return;
     }
     
-    // Handle click events (no activatorEvent)
-    if (!event.activatorEvent) {
-      console.log('Click event detected');
-      if (placedTiles.length >= 9) return;
-      
-      const uniqueId = `${active.id.split('-')[0]}-${Date.now()}`;
-      setPlacedTiles(prev => {
-        const newTiles = [...prev, uniqueId];
-        console.log('Added tile via click:', uniqueId);
-        return newTiles;
-      });
-      playSound('place');
-      return;
-    }
+    // Generate a unique ID for this tile instance
+    const uniqueId = `${letter.toLowerCase()}-${Date.now()}`;
     
-    // Handle drag events
-    if (over && (over.id === 'dropzone' || over.id.startsWith('position-'))) {
-      console.log('Valid drop detected:', over.id);
-      if (placedTiles.length >= 9) {
-        console.log('Dropzone full');
-        return;
-      }
+    // Add the tile to the end of the placed tiles
+    setPlacedTiles(prev => {
+      const newPlacedTiles = [...prev, uniqueId];
       
-      const letter = active.id.split('-')[0];
-      const uniqueId = `${letter}-${Date.now()}`;
+      // Reset incorrect tiles when a new tile is added
+      setIncorrectTiles([]);
       
-      if (over.id === 'dropzone') {
-        // Add to end
-        setPlacedTiles(prev => {
-          const newTiles = [...prev, uniqueId];
-          console.log('Added tile via drag:', uniqueId);
-          return newTiles;
-        });
-      } else {
-        // Add at specific position
-        const position = parseInt(over.id.split('-')[1]);
-        setPlacedTiles(prev => {
-          const newTiles = [...prev];
-          newTiles.splice(position, 0, uniqueId);
-          console.log('Added tile at position:', position);
-          return newTiles;
-        });
-      }
-      playSound('place');
-    } else if (over && placedTiles.includes(active.id) && placedTiles.includes(over.id)) {
-      // Reorder within dropzone
-      console.log('Reordering tiles');
-      const oldIndex = placedTiles.indexOf(active.id);
-      const newIndex = placedTiles.indexOf(over.id);
-      
-      if (oldIndex !== newIndex) {
-        setPlacedTiles(prev => arrayMove(prev, oldIndex, newIndex));
-        playSound('place');
-      }
-    }
+      return newPlacedTiles;
+    });
+    
+    playSound('place');
   };
 
   const handleRemoveTile = (index) => {
     setPlacedTiles(prev => prev.filter((_, i) => i !== index));
+    setIncorrectTiles(prev => prev.filter(i => i !== index));
     playSound('remove');
   };
 
@@ -211,7 +187,7 @@ function App() {
     // Extract just the letters from the tile IDs to form the word
     const word = placedTiles.map(id => id.split('-')[0]).join('').toLowerCase();
     
-    if (WORD_EMOJIS[word]) {
+    if (gameMode === 'playground' && WORD_EMOJIS[word]) {
       setCurrentWord(word);
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.rate = 0.8;
@@ -226,10 +202,18 @@ function App() {
 
   const handleCloseModal = () => {
     setShowModal(false);
+    
+    // If in game mode, select a new word after closing the modal
+    if (gameMode === 'game') {
+      setPlacedTiles([]);
+      setIncorrectTiles([]);
+      selectRandomWord();
+    }
   };
 
   const handleClearAll = () => {
     setPlacedTiles([]);
+    setIncorrectTiles([]);
     playSound('clear');
   };
   
@@ -261,17 +245,73 @@ function App() {
         oscillator.start();
         setTimeout(() => oscillator.stop(), 300);
         break;
+      case 'incorrect':
+        // Play a descending tone for incorrect answers
+        oscillator.frequency.value = 400;
+        gainNode.gain.value = 0.1;
+        oscillator.start();
+        
+        // Create a descending tone effect
+        oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+        oscillator.frequency.linearRampToValueAtTime(200, audioContext.currentTime + 0.3);
+        
+        setTimeout(() => oscillator.stop(), 300);
+        break;
+    }
+  };
+
+  const toggleGameMode = () => {
+    setGameMode(prev => prev === 'playground' ? 'game' : 'playground');
+    setPlacedTiles([]);
+    setIncorrectTiles([]);
+  };
+  
+  const toggleHints = () => {
+    setShowHints(prev => !prev);
+  };
+  
+  const handleCheckSpelling = () => {
+    if (placedTiles.length === 0) return;
+    
+    // Get the current word formed by the tiles
+    const currentSpelling = placedTiles.map(id => id.split('-')[0]).join('').toLowerCase();
+    
+    // Check if the spelling matches the target word
+    if (currentSpelling === currentGameWord) {
+      // Correct spelling
+      const utterance = new SpeechSynthesisUtterance(`Great job! You spelled ${currentGameWord} correctly!`);
+      utterance.rate = 0.8;
+      window.speechSynthesis.speak(utterance);
+      setShowModal(true);
+    } else {
+      // Incorrect spelling - identify which tiles are incorrect
+      const newIncorrectTiles = [];
+      const targetLetters = currentGameWord.split('');
+      
+      placedTiles.forEach((tileId, index) => {
+        const letter = tileId.split('-')[0].toLowerCase();
+        // Check if this letter is incorrect at this position
+        if (index >= targetLetters.length || letter !== targetLetters[index]) {
+          newIncorrectTiles.push(index);
+        }
+      });
+      
+      setIncorrectTiles(newIncorrectTiles);
+      
+      // Provide audio feedback
+      const utterance = new SpeechSynthesisUtterance("Not quite right. Try again!");
+      utterance.rate = 0.8;
+      window.speechSynthesis.speak(utterance);
+      
+      playSound('incorrect');
     }
   };
 
   return (
-    <DndContext 
-      sensors={sensors}
-      onDragEnd={handleDragEnd}
-      onDragStart={(event) => console.log('Drag Start:', event)}
-      onDragMove={(event) => console.log('Drag Move:', event)}
-      collisionDetection={closestCenter}
-    >
+    <>
+      {/* Add the animation style to the document */}
+      <style>{zoomToDestinationKeyframes}</style>
+      
       <div style={{
         minHeight: '100vh',
         padding: '10px', // Reduced padding for mobile
@@ -298,8 +338,54 @@ function App() {
           textShadow: '2px 2px 0px #FFE66D',
           margin: '0.5rem 0' // Add margin for better spacing on mobile
         }}>
-          Phonics Playground
+          Phonics {gameMode === 'playground' ? 'Playground' : 'Game'}
         </h1>
+        
+        {/* Mode toggle */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '0.8rem',
+          marginTop: '-1rem'
+        }}>
+          <button
+            onClick={toggleGameMode}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: gameMode === 'playground' ? '#45B7B8' : '#FFE66D',
+              color: gameMode === 'playground' ? 'white' : '#333',
+              border: 'none',
+              borderRadius: '50px',
+              fontSize: 'clamp(0.8rem, 3vw, 1rem)',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              boxShadow: '0 2px 0 rgba(0,0,0,0.1)',
+              transition: 'all 0.1s ease',
+            }}
+          >
+            {gameMode === 'playground' ? '🎮 Switch to Game Mode' : '🏠 Switch to Playground'}
+          </button>
+          
+          {gameMode === 'game' && (
+            <button
+              onClick={toggleHints}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: showHints ? '#45B7B8' : '#FFE66D',
+                color: showHints ? 'white' : '#333',
+                border: 'none',
+                borderRadius: '50px',
+                fontSize: 'clamp(0.8rem, 3vw, 1rem)',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                boxShadow: '0 2px 0 rgba(0,0,0,0.1)',
+                transition: 'all 0.1s ease',
+              }}
+            >
+              {showHints ? '🔍 Hide Hints' : '💡 Show Hints'}
+            </button>
+          )}
+        </div>
         
         <div style={{
           width: '100%',
@@ -308,9 +394,51 @@ function App() {
           flexDirection: 'column',
           gap: '1.5rem' // Reduced gap for mobile
         }}>
-          <DropZone 
+          {gameMode === 'game' && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '1rem',
+              padding: '1rem',
+              backgroundColor: 'white',
+              borderRadius: '20px',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+              border: '3px solid #FFE66D',
+              flexWrap: 'wrap',
+            }}>
+              <div style={{ fontSize: '4rem' }}>{currentGameEmoji}</div>
+              <button
+                onClick={() => {
+                  const utterance = new SpeechSynthesisUtterance(`Spell the word: ${currentGameWord}`);
+                  utterance.rate = 0.8;
+                  window.speechSynthesis.speak(utterance);
+                }}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#45B7B8',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '50px',
+                  fontSize: 'clamp(0.8rem, 3vw, 1rem)',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 0 rgba(0,0,0,0.1)',
+                }}
+              >
+                🔊 Repeat Word
+              </button>
+            </div>
+          )}
+          
+          <WordArea 
             placedTiles={placedTiles} 
             onRemoveTile={handleRemoveTile}
+            gameMode={gameMode}
+            targetWord={currentGameWord}
+            showHints={showHints}
+            incorrectTiles={incorrectTiles}
           />
           
           <div style={{
@@ -320,31 +448,61 @@ function App() {
             flexWrap: 'wrap', // Allow buttons to wrap on very small screens
             padding: '0 10px' // Add padding for touch targets
           }}>
-            <button 
-              onClick={handleSpeakWord}
-              style={{
-                padding: '12px 24px',
-                backgroundColor: '#45B7B8',
-                color: 'white',
-                border: 'none',
-                borderRadius: '50px',
-                fontSize: 'clamp(1rem, 4vw, 1.2rem)', // Responsive font size
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                boxShadow: '0 4px 0 #2C8C8D',
-                transition: 'all 0.1s ease',
-                transform: 'translateY(0)',
-                minWidth: '140px', // Ensure minimum touch target size
-                minHeight: '44px', // Ensure minimum touch target size
-                ':active': {
-                  transform: 'translateY(4px)',
-                  boxShadow: '0 0 0 #2C8C8D',
-                }
-              }}
-              disabled={placedTiles.length === 0}
-            >
-              Speak Word 🔊
-            </button>
+            {gameMode === 'playground' && (
+              <button 
+                onClick={handleSpeakWord}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#45B7B8',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '50px',
+                  fontSize: 'clamp(1rem, 4vw, 1.2rem)', // Responsive font size
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 0 #2C8C8D',
+                  transition: 'all 0.1s ease',
+                  transform: 'translateY(0)',
+                  minWidth: '140px', // Ensure minimum touch target size
+                  minHeight: '44px', // Ensure minimum touch target size
+                  ':active': {
+                    transform: 'translateY(4px)',
+                    boxShadow: '0 0 0 #2C8C8D',
+                  }
+                }}
+                disabled={placedTiles.length === 0}
+              >
+                Speak Word 🔊
+              </button>
+            )}
+            
+            {gameMode === 'game' && (
+              <button 
+                onClick={handleCheckSpelling}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#4CAF50',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '50px',
+                  fontSize: 'clamp(1rem, 4vw, 1.2rem)', // Responsive font size
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 0 #2E7D32',
+                  transition: 'all 0.1s ease',
+                  transform: 'translateY(0)',
+                  minWidth: '140px', // Ensure minimum touch target size
+                  minHeight: '44px', // Ensure minimum touch target size
+                  ':active': {
+                    transform: 'translateY(4px)',
+                    boxShadow: '0 0 0 #2E7D32',
+                  }
+                }}
+                disabled={placedTiles.length === 0}
+              >
+                Check Spelling ✓
+              </button>
+            )}
             
             <button 
               onClick={handleClearAll}
@@ -375,7 +533,7 @@ function App() {
           
           <AlphabetTileGrid 
             alphabet={alphabet}
-            onDragEnd={handleDragEnd}
+            onAddTile={handleAddTile}
           />
         </div>
         
@@ -410,7 +568,7 @@ function App() {
                 fontSize: '8rem',
                 lineHeight: 1,
               }}>
-                {WORD_EMOJIS[currentWord]}
+                {gameMode === 'playground' ? WORD_EMOJIS[currentWord] : currentGameEmoji}
               </div>
               
               <h2 style={{
@@ -420,7 +578,7 @@ function App() {
                 textAlign: 'center',
                 textTransform: 'uppercase',
               }}>
-                {currentWord}
+                {gameMode === 'playground' ? currentWord : currentGameWord}
               </h2>
               
               <button 
@@ -456,12 +614,12 @@ function App() {
           }
         `}
       </style>
-    </DndContext>
+    </>
   );
 }
 
-// Update AlphabetTileGrid to remove tileCounts
-function AlphabetTileGrid({ alphabet, onDragEnd }) {
+// Simplified AlphabetTileGrid without drag functionality
+function AlphabetTileGrid({ alphabet, onAddTile }) {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   
   useEffect(() => {
@@ -488,72 +646,38 @@ function AlphabetTileGrid({ alphabet, onDragEnd }) {
       border: '3px solid #FFE66D',
     }}>
       {alphabet.split('').map(letter => (
-        <LetterStack 
+        <LetterTile 
           key={letter}
           letter={letter}
           isSmallScreen={isSmallScreen}
-          onDragEnd={onDragEnd}
+          onAddTile={onAddTile}
         />
       ))}
     </div>
   );
 }
 
-// Update LetterStack to remove count-related logic
-function LetterStack({ letter, isSmallScreen, onDragEnd }) {
-  return (
-    <div style={{
-      position: 'relative',
-      height: isSmallScreen ? '65px' : '80px',
-      width: isSmallScreen ? '60px' : '70px',
-    }}>
-      <StackedTile 
-        letter={letter.toUpperCase()}
-        style={{
-          width: isSmallScreen ? '60px' : '70px',
-          height: isSmallScreen ? '60px' : '70px',
-        }}
-        isSmallScreen={isSmallScreen}
-        onDragEnd={onDragEnd}
-      />
-    </div>
-  );
-}
+// Simplified LetterTile without drag functionality
+function LetterTile({ letter, isSmallScreen, onAddTile }) {
+  const size = isSmallScreen ? '60px' : '70px';
 
-// Update StackedTile for responsive sizing
-function StackedTile({ letter, style, isSmallScreen, onDragEnd }) {
-  // Generate a unique ID for this instance
-  const id = `${letter.toLowerCase()}-source`;
-  
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id,
-  });
-
-  const tileStyle = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-  } : undefined;
-
-  const handleClick = (e) => {
-    // Only handle actual clicks, not drag events
-    if (e.type === 'click') {
-      const uniqueId = `${letter.toLowerCase()}-${Date.now()}`;
-      console.log('Click handler called for', letter, 'with ID:', uniqueId);
-      onDragEnd({
-        active: { id: uniqueId },
-        over: { id: 'dropzone' }
-      });
-    }
+  const handleTileClick = () => {
+    // Speak the letter name when tapped
+    const utterance = new SpeechSynthesisUtterance(letter);
+    utterance.rate = 0.8;
+    window.speechSynthesis.speak(utterance);
+    
+    // Call the original onAddTile function
+    onAddTile(letter);
   };
 
   return (
-    <div
-      ref={setNodeRef}
+    <div 
+      onClick={handleTileClick}
       style={{
-        ...style,
-        ...tileStyle,
-        width: isSmallScreen ? '60px' : '70px',
-        height: isSmallScreen ? '60px' : '70px',
-        backgroundColor: isDragging ? '#B8E6B3' : '#A8D5E5',
+        width: size,
+        height: size,
+        backgroundColor: '#FFE66D',
         borderRadius: '12px',
         display: 'flex',
         alignItems: 'center',
@@ -561,32 +685,27 @@ function StackedTile({ letter, style, isSmallScreen, onDragEnd }) {
         fontSize: isSmallScreen ? '2rem' : '2.5rem',
         fontWeight: 'bold',
         color: '#333333',
-        cursor: 'grab',
+        cursor: 'pointer',
         userSelect: 'none',
         WebkitUserSelect: 'none',
         WebkitTouchCallout: 'none',
-        touchAction: 'none',
-        transition: isDragging ? 'none' : 'background-color 0.2s, box-shadow 0.2s',
-        boxShadow: isDragging ? '0 8px 16px rgba(0,0,0,0.2)' : '0 4px 0 rgba(0,0,0,0.1)',
+        touchAction: 'manipulation',
         border: '3px solid rgba(255,255,255,0.5)',
-        position: 'relative',
-        zIndex: isDragging ? 1000 : 1,
+        boxShadow: '0 4px 0 rgba(0,0,0,0.1)',
+        transition: 'transform 0.1s ease',
+        ':active': {
+          transform: 'translateY(4px)',
+          boxShadow: '0 0 0 rgba(0,0,0,0.1)',
+        }
       }}
-      onClick={handleClick}
-      {...listeners}
-      {...attributes}
     >
-      {letter}
+      {letter.toUpperCase()}
     </div>
   );
 }
 
-// Update DropZone for better mobile experience
-function DropZone({ placedTiles, onRemoveTile }) {
-  const { isOver, setNodeRef } = useDroppable({
-    id: 'dropzone',
-  });
-  
+// Simplified WordArea without drag functionality
+function WordArea({ placedTiles, onRemoveTile, gameMode, targetWord, showHints, incorrectTiles }) {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   
   useEffect(() => {
@@ -599,112 +718,129 @@ function DropZone({ placedTiles, onRemoveTile }) {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
+  // Create ghost tiles for game mode
+  const renderGhostTiles = () => {
+    if (gameMode !== 'game' || !showHints || !targetWord) return null;
+    
+    // Get the letters that have already been placed
+    const placedLetters = placedTiles.map(id => id.split('-')[0].toLowerCase());
+    
+    // Create ghost tiles for the remaining letters
+    return targetWord.split('').map((letter, index) => {
+      // If we already have a placed tile at this position, don't show a ghost
+      if (index < placedLetters.length) return null;
+      
+      return (
+        <div
+          key={`ghost-${index}`}
+          style={{
+            width: isSmallScreen ? '60px' : '70px',
+            height: isSmallScreen ? '60px' : '70px',
+            backgroundColor: 'transparent',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: isSmallScreen ? '2rem' : '2.5rem',
+            fontWeight: 'bold',
+            color: 'rgba(200, 200, 200, 0.3)',
+            border: '3px dashed rgba(200, 200, 200, 0.3)',
+            margin: '0 4px',
+          }}
+        >
+          {letter.toUpperCase()}
+        </div>
+      );
+    });
+  };
+
   return (
     <div 
-      ref={setNodeRef} 
       style={{
-        minHeight: '100px',
+        minHeight: isSmallScreen ? '120px' : '150px', // Fixed height to prevent layout shifts
+        height: gameMode === 'game' ? (isSmallScreen ? '120px' : '150px') : 'auto', // Fixed height in game mode
         backgroundColor: 'white',
-        border: `4px dashed ${isOver ? '#45B7B8' : '#FFE66D'}`,
+        border: '4px dashed #FFE66D',
         borderRadius: '20px',
         display: 'flex',
         alignItems: 'center',
         padding: isSmallScreen ? '1rem' : '1.5rem',
-        gap: '0.25rem',
-        transition: 'border-color 0.3s ease',
+        gap: '0.5rem',
         position: 'relative',
         flexWrap: 'wrap',
+        overflow: 'auto', // Add scrolling if content overflows
       }}
       role="region" 
-      aria-label="Letter tiles drop zone"
+      aria-label="Letter tiles area"
     >
-      <SortableContext items={placedTiles} strategy={horizontalListSortingStrategy}>
-        {placedTiles.map((tileId, index) => (
-          <React.Fragment key={`fragment-${tileId}-${index}`}>
-            {index === 0 && <DropPositionIndicator index={0} isSmallScreen={isSmallScreen} />}
-            
-            <SortableTile 
-              key={`${tileId}-${index}`}
-              id={tileId}
-              letter={tileId.split('-')[0].toUpperCase()}
-              index={index}
-              onRemoveTile={onRemoveTile}
-              isSmallScreen={isSmallScreen}
-            />
-            
-            <DropPositionIndicator index={index + 1} isSmallScreen={isSmallScreen} />
-          </React.Fragment>
-        ))}
-        
-        {placedTiles.length === 0 && <DropPositionIndicator index={0} isSmallScreen={isSmallScreen} />}
-      </SortableContext>
+      {gameMode === 'game' && showHints && placedTiles.length === 0 ? (
+        // Show ghost tiles when in game mode with hints and no tiles placed yet
+        renderGhostTiles()
+      ) : (
+        // Show placed tiles
+        placedTiles.map((tileId, index) => (
+          <PlacedTile 
+            key={`${tileId}-${index}`}
+            letter={tileId.split('-')[0].toUpperCase()}
+            index={index}
+            onRemoveTile={onRemoveTile}
+            isSmallScreen={isSmallScreen}
+            incorrect={incorrectTiles.includes(index)}
+          />
+        ))
+      )}
+      
+      {/* Show ghost tiles after the placed tiles in game mode */}
+      {gameMode === 'game' && showHints && placedTiles.length > 0 && placedTiles.length < targetWord.length && (
+        renderGhostTiles()
+      )}
     </div>
   );
 }
 
-function DropPositionIndicator({ index, isSmallScreen }) {
-  const { isOver, setNodeRef } = useDroppable({
-    id: `position-${index}`,
-  });
+// Simplified PlacedTile without drag functionality
+function PlacedTile({ letter, index, onRemoveTile, isSmallScreen, incorrect }) {
+  const [isNew, setIsNew] = useState(true);
   
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        width: '8px',
-        height: isSmallScreen ? '60px' : '70px',
-        backgroundColor: isOver ? 'rgba(69, 183, 184, 0.5)' : 'transparent',
-        borderRadius: '4px',
-        transition: 'background-color 0.2s ease',
-        margin: '0 2px',
-      }}
-    />
-  );
-}
-
-// Update SortableTile for responsive sizing
-function SortableTile({ id, letter, index, onRemoveTile, isSmallScreen }) {
-  const { 
-    attributes, 
-    listeners, 
-    setNodeRef, 
-    transform, 
-    transition,
-    isDragging 
-  } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    width: isSmallScreen ? '60px' : '70px',
-    height: isSmallScreen ? '60px' : '70px',
-    backgroundColor: isDragging ? '#B8E6B3' : '#D7C0E0',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: isSmallScreen ? '2rem' : '2.5rem', // Smaller font on mobile
-    fontWeight: 'bold',
-    color: '#333333',
-    cursor: 'grab',
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-    WebkitTouchCallout: 'none',
-    touchAction: 'manipulation',
-    zIndex: isDragging ? 10 : 1,
-    boxShadow: isDragging 
-      ? '0 8px 16px rgba(0,0,0,0.2)' 
-      : '0 4px 0 rgba(0,0,0,0.1)',
-    border: '3px solid rgba(255,255,255,0.5)',
-  };
+  // Set isNew to false after the animation completes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsNew(false);
+    }, 300); // Match animation duration
+    return () => clearTimeout(timer);
+  }, []);
+  
+  const size = isSmallScreen ? '60px' : '70px';
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
       onClick={() => onRemoveTile(index)}
-      {...attributes}
-      {...listeners}
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: incorrect ? '#FF6B6B' : '#D7C0E0',
+        borderRadius: '12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: isSmallScreen ? '2rem' : '2.5rem',
+        fontWeight: 'bold',
+        color: '#333333',
+        cursor: 'pointer',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+        touchAction: 'manipulation',
+        boxShadow: '0 4px 0 rgba(0,0,0,0.1)',
+        border: '3px solid rgba(255,255,255,0.5)',
+        // Apply animation for new tiles
+        animation: isNew ? 'zoomToDestination 0.3s ease-out' : 'none',
+        transition: 'transform 0.1s ease',
+        ':active': {
+          transform: 'translateY(4px)',
+          boxShadow: '0 0 0 rgba(0,0,0,0.1)',
+        }
+      }}
     >
       {letter}
     </div>
