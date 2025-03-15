@@ -1,89 +1,89 @@
 import React, { useState, useEffect } from 'react';
 
-// Animal emojis
+// Animal emojis with difficulty levels
 const ANIMAL_EMOJIS = {
-  ant: '🐜',
-  bear: '🐻',
-  bee: '🐝',
-  bird: '🐦',
-  bug: '🐛',
-  cat: '🐱',
-  cow: '🐄',
-  dog: '🐶',
-  duck: '🦆',
-  fish: '🐟',
-  fox: '🦊',
-  frog: '🐸',
-  giraffe: '🦒',
-  goat: '🐐',
-  lion: '🦁',
-  mouse: '🐭',
-  owl: '🦉',
-  pig: '🐷',
-  rabbit: '🐰',
-  tiger: '🐯',
-  wolf: '🐺',
-  yak: '🦬'
+  ant: { emoji: '🐜', difficulty: 'easy' },
+  bear: { emoji: '🐻', difficulty: 'medium' },
+  bee: { emoji: '🐝', difficulty: 'medium' },
+  bird: { emoji: '🐦', difficulty: 'medium' },
+  bug: { emoji: '🐛', difficulty: 'easy' },
+  cat: { emoji: '🐱', difficulty: 'easy' },
+  cow: { emoji: '🐄', difficulty: 'medium' },
+  dog: { emoji: '🐶', difficulty: 'easy' },
+  duck: { emoji: '🦆', difficulty: 'easy' },
+  fish: { emoji: '🐟', difficulty: 'medium' },
+  fox: { emoji: '🦊', difficulty: 'medium' },
+  frog: { emoji: '🐸', difficulty: 'medium' },
+  giraffe: { emoji: '🦒', difficulty: 'hard' },
+  goat: { emoji: '🐐', difficulty: 'medium' },
+  lion: { emoji: '🦁', difficulty: 'medium' },
+  mouse: { emoji: '🐭', difficulty: 'hard' },
+  owl: { emoji: '🦉', difficulty: 'medium' },
+  pig: { emoji: '🐷', difficulty: 'easy' },
+  rabbit: { emoji: '🐰', difficulty: 'medium' },
+  tiger: { emoji: '🐯', difficulty: 'medium' },
+  wolf: { emoji: '🐺', difficulty: 'medium' },
+  yak: { emoji: '🦬', difficulty: 'easy' }
 };
 
-// People and body parts emojis
+// People and body parts emojis with difficulty levels
 const PEOPLE_AND_BODY_EMOJIS = {
-  ear: '👂',
-  eye: '👁️',
-  foot: '🦶',
-  hand: '👋',
-  mouth: '👄',
-  nose: '👃',
-  tongue: '👅',
-  tooth: '🦷'
+  ear: { emoji: '👂', difficulty: 'medium' },
+  eye: { emoji: '👁️', difficulty: 'hard' },
+  foot: { emoji: '🦶', difficulty: 'medium' },
+  hand: { emoji: '👋', difficulty: 'easy' },
+  mouth: { emoji: '👄', difficulty: 'hard' },
+  nose: { emoji: '👃', difficulty: 'medium' },
+  tongue: { emoji: '👅', difficulty: 'hard' },
+  tooth: { emoji: '🦷', difficulty: 'hard' }
 };
 
-// Transportation emojis
+// Transportation emojis with difficulty levels
 const TRANSPORT_EMOJIS = {
-  boat: '⛵',
-  bus: '🚌',
-  car: '🚗',
-  ship: '🚢'
+  boat: { emoji: '⛵', difficulty: 'medium' },
+  bus: { emoji: '🚌', difficulty: 'easy' },
+  car: { emoji: '🚗', difficulty: 'easy' },
+  ship: { emoji: '🚢', difficulty: 'medium' }
 };
 
-// Object emojis
+// Object emojis with difficulty levels
 const OBJECT_EMOJIS = {
-  ball: '🏀',
-  bed: '🛏️',
-  book: '📚',
-  hat: '🎩',
-  key: '🔑',
-  kite: '🪁',
-  map: '🗺️',
-  pen: '🖊️',
-  sock: '🧦'
+  ball: { emoji: '🏀', difficulty: 'medium' },
+  bed: { emoji: '🛏️', difficulty: 'easy' },
+  book: { emoji: '📚', difficulty: 'medium' },
+  hat: { emoji: '🎩', difficulty: 'easy' },
+  key: { emoji: '🔑', difficulty: 'medium' },
+  kite: { emoji: '🪁', difficulty: 'medium' },
+  map: { emoji: '🗺️', difficulty: 'easy' },
+  pen: { emoji: '🖊️', difficulty: 'easy' },
+  sock: { emoji: '🧦', difficulty: 'medium' }
 };
 
-// Nature emojis
+// Nature emojis with difficulty levels
 const NATURE_EMOJIS = {
-  ice: '🧊',
-  leaf: '🍃',
-  moon: '🌙',
-  rain: '🌧️',
-  snow: '❄️',
-  star: '⭐',
-  sun: '☀️',
-  tree: '🌳',
-  web: '🕸️'
+  ice: { emoji: '🧊', difficulty: 'medium' },
+  leaf: { emoji: '🍃', difficulty: 'medium' },
+  moon: { emoji: '🌙', difficulty: 'medium' },
+  rain: { emoji: '🌧️', difficulty: 'medium' },
+  snow: { emoji: '❄️', difficulty: 'medium' },
+  star: { emoji: '⭐', difficulty: 'easy' },
+  sun: { emoji: '☀️', difficulty: 'easy' },
+  tree: { emoji: '🌳', difficulty: 'medium' },
+  web: { emoji: '🕸️', difficulty: 'easy' }
 };
 
-// Food emojis
+// Food emojis with difficulty levels
 const FOOD_EMOJIS = {
-  cake: '🎂',
-  egg: '🥚',
-  honey: '🍯',
-  nut: '🥜',
-  pea: '🫛'
+  cake: { emoji: '🎂', difficulty: 'medium' },
+  egg: { emoji: '🥚', difficulty: 'easy' },
+  honey: { emoji: '🍯', difficulty: 'hard' },
+  nut: { emoji: '🥜', difficulty: 'easy' },
+  pea: { emoji: '🫛', difficulty: 'medium' }
 };
 
-// Places emojis
+// Places emojis with difficulty levels
 const PLACES_EMOJIS = {
-  house: '🏠'
+  house: { emoji: '🏠', difficulty: 'hard' }
 };
 
 // Combine all categories into WORD_EMOJIS
@@ -115,6 +115,51 @@ const zoomToDestinationKeyframes = `
 }
 `;
 
+// Letter sounds mapping for phonics
+const LETTER_SOUNDS = {
+  a: { primary: "ah", secondary: "ay" },
+  b: { primary: "buh", emphasis: "b-uh" },
+  c: { primary: "kuh", secondary: "sss", emphasis: "k-uh" },
+  d: { primary: "duh", emphasis: "d-uh" },
+  e: { primary: "eh", secondary: "ee" },
+  f: { primary: "fff" },
+  g: { primary: "guh", secondary: "juh", emphasis: "g-uh" },
+  h: { primary: "huh" },
+  i: { primary: "ih", secondary: "eye" },
+  j: { primary: "juh" },
+  k: { primary: "kuh", emphasis: "k-uh" },
+  l: { primary: "lll" },
+  m: { primary: "mmm" },
+  n: { primary: "nnn" },
+  o: { primary: "oh", secondary: "oo" },
+  p: { primary: "puh", emphasis: "p-uh" },
+  q: { primary: "kwuh" },
+  r: { primary: "rrr" },
+  s: { primary: "sss", secondary: "zzz" },
+  t: { primary: "tuh", emphasis: "t-uh" },
+  u: { primary: "uh", secondary: "yoo" },
+  v: { primary: "vvv" },
+  w: { primary: "wuh" },
+  x: { primary: "ks", emphasis: "k-s" },
+  y: { primary: "yuh", secondary: "eye" },
+  z: { primary: "zzz" }
+};
+
+// Function to speak a letter name followed by its sound
+const speakLetterWithSound = (letter) => {
+  // Cancel any ongoing speech
+  window.speechSynthesis.cancel();
+  
+  // Just speak the letter name clearly
+  const nameUtterance = new SpeechSynthesisUtterance(letter);
+  nameUtterance.rate = 0.7; // Slower rate for better clarity
+  nameUtterance.pitch = 1.1; // Slightly higher pitch for emphasis
+  nameUtterance.volume = 1.0; // Full volume
+  
+  // Queue the utterance
+  window.speechSynthesis.speak(nameUtterance);
+};
+
 function App() {
   const [placedTiles, setPlacedTiles] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -124,23 +169,44 @@ function App() {
   const [currentGameEmoji, setCurrentGameEmoji] = useState('');
   const [showHints, setShowHints] = useState(true);
   const [incorrectTiles, setIncorrectTiles] = useState([]);
+  const [difficultyLevel, setDifficultyLevel] = useState('all'); // 'all', 'easy', 'medium', or 'hard'
   
   // Create the full alphabet
   const alphabet = 'abcdefghijklmnopqrstuvwxyz';
   
   // Function to select a random word for the game mode
   const selectRandomWord = () => {
-    const words = Object.keys(WORD_EMOJIS);
-    const randomIndex = Math.floor(Math.random() * words.length);
-    const selectedWord = words[randomIndex];
+    // Filter words by difficulty if a specific level is selected
+    const words = Object.entries(WORD_EMOJIS).filter(([word, data]) => {
+      return difficultyLevel === 'all' || data.difficulty === difficultyLevel;
+    }).map(([word]) => word);
+    
+    // If no words match the difficulty filter, use all words
+    const wordsToUse = words.length > 0 ? words : Object.keys(WORD_EMOJIS);
+    
+    const randomIndex = Math.floor(Math.random() * wordsToUse.length);
+    const selectedWord = wordsToUse[randomIndex];
     setCurrentGameWord(selectedWord);
-    setCurrentGameEmoji(WORD_EMOJIS[selectedWord]);
+    setCurrentGameEmoji(WORD_EMOJIS[selectedWord].emoji);
     setIncorrectTiles([]);
     
-    // Speak the prompt
-    const utterance = new SpeechSynthesisUtterance(`Spell the word: ${selectedWord}`);
-    utterance.rate = 0.8;
-    window.speechSynthesis.speak(utterance);
+    // First speak the instruction
+    const instructionUtterance = new SpeechSynthesisUtterance("Spell the word:");
+    instructionUtterance.rate = 0.8;
+    
+    // Then speak the word slowly
+    const wordUtterance = new SpeechSynthesisUtterance(selectedWord);
+    wordUtterance.rate = 0.6; // Slower rate for better clarity
+    
+    // Queue both utterances
+    window.speechSynthesis.speak(instructionUtterance);
+    
+    // Add a slight delay before speaking the word
+    instructionUtterance.onend = () => {
+      setTimeout(() => {
+        window.speechSynthesis.speak(wordUtterance);
+      }, 300);
+    };
   };
   
   // Initialize a random word when game mode is selected
@@ -150,7 +216,7 @@ function App() {
       setIncorrectTiles([]);
       selectRandomWord();
     }
-  }, [gameMode]);
+  }, [gameMode, difficultyLevel]);
   
   const handleAddTile = (letter) => {
     // Check if we've reached the maximum number of tiles
@@ -270,6 +336,15 @@ function App() {
     setShowHints(prev => !prev);
   };
   
+  const handleDifficultyChange = (level) => {
+    setDifficultyLevel(level);
+    setPlacedTiles([]);
+    setIncorrectTiles([]);
+    if (gameMode === 'game') {
+      selectRandomWord();
+    }
+  };
+  
   const handleCheckSpelling = () => {
     if (placedTiles.length === 0) return;
     
@@ -387,6 +462,47 @@ function App() {
           )}
         </div>
         
+        {/* Difficulty selector */}
+        {gameMode === 'game' && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            flexWrap: 'wrap',
+            marginTop: '-0.5rem'
+          }}>
+            <span style={{ 
+              fontSize: 'clamp(0.8rem, 3vw, 1rem)',
+              fontWeight: 'bold',
+              color: '#333',
+              alignSelf: 'center'
+            }}>
+              Difficulty:
+            </span>
+            {['all', 'easy', 'medium', 'hard'].map(level => (
+              <button
+                key={level}
+                onClick={() => handleDifficultyChange(level)}
+                style={{
+                  padding: '6px 12px',
+                  backgroundColor: difficultyLevel === level ? '#FF6B6B' : '#FFE66D',
+                  color: difficultyLevel === level ? 'white' : '#333',
+                  border: 'none',
+                  borderRadius: '50px',
+                  fontSize: 'clamp(0.7rem, 2.5vw, 0.9rem)',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 0 rgba(0,0,0,0.1)',
+                  transition: 'all 0.1s ease',
+                  textTransform: 'capitalize'
+                }}
+              >
+                {level === 'all' ? 'All Levels' : level}
+              </button>
+            ))}
+          </div>
+        )}
+        
         <div style={{
           width: '100%',
           maxWidth: '800px',
@@ -411,8 +527,8 @@ function App() {
               <div style={{ fontSize: '4rem' }}>{currentGameEmoji}</div>
               <button
                 onClick={() => {
-                  const utterance = new SpeechSynthesisUtterance(`Spell the word: ${currentGameWord}`);
-                  utterance.rate = 0.8;
+                  const utterance = new SpeechSynthesisUtterance(currentGameWord);
+                  utterance.rate = 0.6; // Slower rate for better clarity
                   window.speechSynthesis.speak(utterance);
                 }}
                 style={{
@@ -568,7 +684,7 @@ function App() {
                 fontSize: '8rem',
                 lineHeight: 1,
               }}>
-                {gameMode === 'playground' ? WORD_EMOJIS[currentWord] : currentGameEmoji}
+                {gameMode === 'playground' ? WORD_EMOJIS[currentWord].emoji : currentGameEmoji}
               </div>
               
               <h2 style={{
@@ -580,6 +696,22 @@ function App() {
               }}>
                 {gameMode === 'playground' ? currentWord : currentGameWord}
               </h2>
+              
+              {/* Display difficulty badge */}
+              <div style={{
+                padding: '5px 12px',
+                backgroundColor: 
+                  (gameMode === 'playground' ? WORD_EMOJIS[currentWord].difficulty : WORD_EMOJIS[currentGameWord].difficulty) === 'easy' ? '#4CAF50' :
+                  (gameMode === 'playground' ? WORD_EMOJIS[currentWord].difficulty : WORD_EMOJIS[currentGameWord].difficulty) === 'medium' ? '#FF9800' : 
+                  '#F44336',
+                color: 'white',
+                borderRadius: '20px',
+                fontSize: '0.9rem',
+                fontWeight: 'bold',
+                textTransform: 'uppercase',
+              }}>
+                {gameMode === 'playground' ? WORD_EMOJIS[currentWord].difficulty : WORD_EMOJIS[currentGameWord].difficulty} LEVEL
+              </div>
               
               <button 
                 onClick={handleCloseModal}
@@ -612,6 +744,12 @@ function App() {
             0% { transform: scale(0.8); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
           }
+          
+          @keyframes letterPulse {
+            0% { box-shadow: 0 0 5px rgba(255,107,107,0.5); }
+            50% { box-shadow: 0 0 15px rgba(255,107,107,0.8); }
+            100% { box-shadow: 0 0 5px rgba(255,107,107,0.5); }
+          }
         `}
       </style>
     </>
@@ -621,6 +759,7 @@ function App() {
 // Simplified AlphabetTileGrid without drag functionality
 function AlphabetTileGrid({ alphabet, onAddTile }) {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const [speakingLetter, setSpeakingLetter] = useState(null);
   
   useEffect(() => {
     const checkScreenSize = () => {
@@ -631,6 +770,15 @@ function AlphabetTileGrid({ alphabet, onAddTile }) {
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
+
+  const handleLetterSpeak = (letter) => {
+    setSpeakingLetter(letter.toLowerCase());
+    
+    // Reset the speaking letter after animation completes
+    setTimeout(() => {
+      setSpeakingLetter(null);
+    }, 1000); // Duration of speaking animation
+  };
 
   return (
     <div style={{
@@ -651,6 +799,8 @@ function AlphabetTileGrid({ alphabet, onAddTile }) {
           letter={letter}
           isSmallScreen={isSmallScreen}
           onAddTile={onAddTile}
+          onSpeak={handleLetterSpeak}
+          isSpeaking={speakingLetter === letter.toLowerCase()}
         />
       ))}
     </div>
@@ -658,14 +808,15 @@ function AlphabetTileGrid({ alphabet, onAddTile }) {
 }
 
 // Simplified LetterTile without drag functionality
-function LetterTile({ letter, isSmallScreen, onAddTile }) {
+function LetterTile({ letter, isSmallScreen, onAddTile, onSpeak, isSpeaking }) {
   const size = isSmallScreen ? '60px' : '70px';
 
   const handleTileClick = () => {
     // Speak the letter name when tapped
-    const utterance = new SpeechSynthesisUtterance(letter);
-    utterance.rate = 0.8;
-    window.speechSynthesis.speak(utterance);
+    speakLetterWithSound(letter);
+    
+    // Notify parent about speaking
+    onSpeak(letter);
     
     // Call the original onAddTile function
     onAddTile(letter);
@@ -677,7 +828,7 @@ function LetterTile({ letter, isSmallScreen, onAddTile }) {
       style={{
         width: size,
         height: size,
-        backgroundColor: '#FFE66D',
+        backgroundColor: isSpeaking ? '#FFA726' : '#FFE66D', // Highlight when speaking
         borderRadius: '12px',
         display: 'flex',
         alignItems: 'center',
@@ -690,9 +841,11 @@ function LetterTile({ letter, isSmallScreen, onAddTile }) {
         WebkitUserSelect: 'none',
         WebkitTouchCallout: 'none',
         touchAction: 'manipulation',
-        border: '3px solid rgba(255,255,255,0.5)',
-        boxShadow: '0 4px 0 rgba(0,0,0,0.1)',
-        transition: 'transform 0.1s ease',
+        border: isSpeaking ? '3px solid #FF6B6B' : '3px solid rgba(255,255,255,0.5)',
+        boxShadow: isSpeaking ? '0 0 10px rgba(255,107,107,0.7)' : '0 4px 0 rgba(0,0,0,0.1)',
+        transition: 'all 0.2s ease',
+        animation: isSpeaking ? 'letterPulse 1s infinite' : 'none',
+        transform: isSpeaking ? 'scale(1.05)' : 'scale(1)',
         ':active': {
           transform: 'translateY(4px)',
           boxShadow: '0 0 0 rgba(0,0,0,0.1)',
