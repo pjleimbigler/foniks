@@ -170,6 +170,7 @@ function App() {
   const [showHints, setShowHints] = useState(true);
   const [incorrectTiles, setIncorrectTiles] = useState([]);
   const [difficultyLevel, setDifficultyLevel] = useState('all'); // 'all', 'easy', 'medium', or 'hard'
+  const [useUppercase, setUseUppercase] = useState(true); // New state for letter case toggle
   
   // Create the full alphabet
   const alphabet = 'abcdefghijklmnopqrstuvwxyz';
@@ -382,6 +383,10 @@ function App() {
     }
   };
 
+  const toggleCase = () => {
+    setUseUppercase(prev => !prev);
+  };
+
   return (
     <>
       {/* Add the animation style to the document */}
@@ -460,6 +465,63 @@ function App() {
               {showHints ? '🔍 Hide Hints' : '💡 Show Hints'}
             </button>
           )}
+          
+          {/* Case toggle slider */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}>
+            {/* Lowercase label */}
+            <span style={{
+              fontSize: 'clamp(0.7rem, 2.5vw, 0.9rem)',
+              fontWeight: 'bold',
+              color: useUppercase ? '#888' : '#333',
+              userSelect: 'none',
+            }}>
+              🔡 abc
+            </span>
+            
+            {/* Toggle switch container */}
+            <div 
+              onClick={toggleCase}
+              style={{
+                width: '50px',
+                height: '26px',
+                backgroundColor: useUppercase ? '#45B7B8' : '#e0e0e0',
+                borderRadius: '50px',
+                position: 'relative',
+                cursor: 'pointer',
+                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              {/* Toggle switch thumb */}
+              <div
+                style={{
+                  position: 'absolute',
+                  width: '22px',
+                  height: '22px',
+                  borderRadius: '50%',
+                  backgroundColor: 'white',
+                  top: '2px',
+                  left: useUppercase ? '26px' : '2px',
+                  transition: 'left 0.2s ease',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                }}
+              />
+            </div>
+            
+            {/* Uppercase label */}
+            <span style={{
+              fontSize: 'clamp(0.7rem, 2.5vw, 0.9rem)',
+              fontWeight: 'bold',
+              color: useUppercase ? '#333' : '#888',
+              userSelect: 'none',
+            }}>
+              🔠 ABC
+            </span>
+          </div>
         </div>
         
         {/* Difficulty selector */}
@@ -555,6 +617,7 @@ function App() {
             targetWord={currentGameWord}
             showHints={showHints}
             incorrectTiles={incorrectTiles}
+            useUppercase={useUppercase}
           />
           
           <div style={{
@@ -650,6 +713,7 @@ function App() {
           <AlphabetTileGrid 
             alphabet={alphabet}
             onAddTile={handleAddTile}
+            useUppercase={useUppercase}
           />
         </div>
         
@@ -757,7 +821,7 @@ function App() {
 }
 
 // Simplified AlphabetTileGrid without drag functionality
-function AlphabetTileGrid({ alphabet, onAddTile }) {
+function AlphabetTileGrid({ alphabet, onAddTile, useUppercase }) {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [speakingLetter, setSpeakingLetter] = useState(null);
   
@@ -801,6 +865,7 @@ function AlphabetTileGrid({ alphabet, onAddTile }) {
           onAddTile={onAddTile}
           onSpeak={handleLetterSpeak}
           isSpeaking={speakingLetter === letter.toLowerCase()}
+          useUppercase={useUppercase}
         />
       ))}
     </div>
@@ -808,7 +873,7 @@ function AlphabetTileGrid({ alphabet, onAddTile }) {
 }
 
 // Simplified LetterTile without drag functionality
-function LetterTile({ letter, isSmallScreen, onAddTile, onSpeak, isSpeaking }) {
+function LetterTile({ letter, isSmallScreen, onAddTile, onSpeak, isSpeaking, useUppercase }) {
   const size = isSmallScreen ? '60px' : '70px';
 
   const handleTileClick = () => {
@@ -852,13 +917,13 @@ function LetterTile({ letter, isSmallScreen, onAddTile, onSpeak, isSpeaking }) {
         }
       }}
     >
-      {letter.toUpperCase()}
+      {useUppercase ? letter.toUpperCase() : letter.toLowerCase()}
     </div>
   );
 }
 
 // Simplified WordArea without drag functionality
-function WordArea({ placedTiles, onRemoveTile, gameMode, targetWord, showHints, incorrectTiles }) {
+function WordArea({ placedTiles, onRemoveTile, gameMode, targetWord, showHints, incorrectTiles, useUppercase }) {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   
   useEffect(() => {
@@ -901,7 +966,7 @@ function WordArea({ placedTiles, onRemoveTile, gameMode, targetWord, showHints, 
             margin: '0 4px',
           }}
         >
-          {letter.toUpperCase()}
+          {useUppercase ? letter.toUpperCase() : letter.toLowerCase()}
         </div>
       );
     });
@@ -934,11 +999,12 @@ function WordArea({ placedTiles, onRemoveTile, gameMode, targetWord, showHints, 
         placedTiles.map((tileId, index) => (
           <PlacedTile 
             key={`${tileId}-${index}`}
-            letter={tileId.split('-')[0].toUpperCase()}
+            letter={tileId.split('-')[0]}
             index={index}
             onRemoveTile={onRemoveTile}
             isSmallScreen={isSmallScreen}
             incorrect={incorrectTiles.includes(index)}
+            useUppercase={useUppercase}
           />
         ))
       )}
@@ -952,7 +1018,7 @@ function WordArea({ placedTiles, onRemoveTile, gameMode, targetWord, showHints, 
 }
 
 // Simplified PlacedTile without drag functionality
-function PlacedTile({ letter, index, onRemoveTile, isSmallScreen, incorrect }) {
+function PlacedTile({ letter, index, onRemoveTile, isSmallScreen, incorrect, useUppercase }) {
   const [isNew, setIsNew] = useState(true);
   
   // Set isNew to false after the animation completes
@@ -995,7 +1061,7 @@ function PlacedTile({ letter, index, onRemoveTile, isSmallScreen, incorrect }) {
         }
       }}
     >
-      {letter}
+      {useUppercase ? letter.toUpperCase() : letter.toLowerCase()}
     </div>
   );
 }
