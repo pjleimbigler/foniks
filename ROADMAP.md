@@ -7,16 +7,16 @@
 - [x] Click sound on tile placement
 
 ## Upcoming Features
-### High Priority
+### Frontend
 - [ ] Difficulty levels based on word length and spelling regularity
 - [ ] Toggle between letters and graphemes
-
-### Medium Priority
 - [ ] Custom word/grapheme sets
 
-### Future
+### Backend
 - [ ] Backend for account creation and progress tracking
 - [ ] Parent/teacher dashboard
+
+### Advanced
 - [ ] Multiplayer mode!?
 
 ## Technical Improvements
