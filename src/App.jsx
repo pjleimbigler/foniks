@@ -1,101 +1,8 @@
-import React, { useState, useEffect } from 'react';
-
-// Animal emojis with difficulty levels
-const ANIMAL_EMOJIS = {
-  ant: { emoji: '🐜', difficulty: 'easy' },
-  bear: { emoji: '🐻', difficulty: 'medium' },
-  bee: { emoji: '🐝', difficulty: 'medium' },
-  bird: { emoji: '🐦', difficulty: 'medium' },
-  bug: { emoji: '🐛', difficulty: 'easy' },
-  cat: { emoji: '🐱', difficulty: 'easy' },
-  cow: { emoji: '🐄', difficulty: 'medium' },
-  dog: { emoji: '🐶', difficulty: 'easy' },
-  duck: { emoji: '🦆', difficulty: 'easy' },
-  fish: { emoji: '🐟', difficulty: 'medium' },
-  fox: { emoji: '🦊', difficulty: 'medium' },
-  frog: { emoji: '🐸', difficulty: 'medium' },
-  giraffe: { emoji: '🦒', difficulty: 'hard' },
-  goat: { emoji: '🐐', difficulty: 'medium' },
-  lion: { emoji: '🦁', difficulty: 'medium' },
-  mouse: { emoji: '🐭', difficulty: 'hard' },
-  owl: { emoji: '🦉', difficulty: 'medium' },
-  pig: { emoji: '🐷', difficulty: 'easy' },
-  rabbit: { emoji: '🐰', difficulty: 'medium' },
-  tiger: { emoji: '🐯', difficulty: 'medium' },
-  wolf: { emoji: '🐺', difficulty: 'medium' },
-  yak: { emoji: '🦬', difficulty: 'easy' }
-};
-
-// People and body parts emojis with difficulty levels
-const PEOPLE_AND_BODY_EMOJIS = {
-  ear: { emoji: '👂', difficulty: 'medium' },
-  eye: { emoji: '👁️', difficulty: 'hard' },
-  foot: { emoji: '🦶', difficulty: 'medium' },
-  hand: { emoji: '👋', difficulty: 'easy' },
-  mouth: { emoji: '👄', difficulty: 'hard' },
-  nose: { emoji: '👃', difficulty: 'medium' },
-  tongue: { emoji: '👅', difficulty: 'hard' },
-  tooth: { emoji: '🦷', difficulty: 'hard' }
-};
-
-// Transportation emojis with difficulty levels
-const TRANSPORT_EMOJIS = {
-  boat: { emoji: '⛵', difficulty: 'medium' },
-  bus: { emoji: '🚌', difficulty: 'easy' },
-  car: { emoji: '🚗', difficulty: 'easy' },
-  ship: { emoji: '🚢', difficulty: 'medium' }
-};
-
-// Object emojis with difficulty levels
-const OBJECT_EMOJIS = {
-  ball: { emoji: '🏀', difficulty: 'medium' },
-  bed: { emoji: '🛏️', difficulty: 'easy' },
-  book: { emoji: '📚', difficulty: 'medium' },
-  hat: { emoji: '🎩', difficulty: 'easy' },
-  key: { emoji: '🔑', difficulty: 'medium' },
-  kite: { emoji: '🪁', difficulty: 'medium' },
-  map: { emoji: '🗺️', difficulty: 'easy' },
-  pen: { emoji: '🖊️', difficulty: 'easy' },
-  sock: { emoji: '🧦', difficulty: 'medium' }
-};
-
-// Nature emojis with difficulty levels
-const NATURE_EMOJIS = {
-  ice: { emoji: '🧊', difficulty: 'medium' },
-  leaf: { emoji: '🍃', difficulty: 'medium' },
-  moon: { emoji: '🌙', difficulty: 'medium' },
-  rain: { emoji: '🌧️', difficulty: 'medium' },
-  snow: { emoji: '❄️', difficulty: 'medium' },
-  star: { emoji: '⭐', difficulty: 'easy' },
-  sun: { emoji: '☀️', difficulty: 'easy' },
-  tree: { emoji: '🌳', difficulty: 'medium' },
-  web: { emoji: '🕸️', difficulty: 'easy' }
-};
-
-// Food emojis with difficulty levels
-const FOOD_EMOJIS = {
-  cake: { emoji: '🎂', difficulty: 'medium' },
-  egg: { emoji: '🥚', difficulty: 'easy' },
-  honey: { emoji: '🍯', difficulty: 'hard' },
-  nut: { emoji: '🥜', difficulty: 'easy' },
-  pea: { emoji: '🫛', difficulty: 'medium' }
-};
-
-// Places emojis with difficulty levels
-const PLACES_EMOJIS = {
-  house: { emoji: '🏠', difficulty: 'hard' }
-};
-
-// Combine all categories into WORD_EMOJIS
-const WORD_EMOJIS = {
-  ...ANIMAL_EMOJIS,
-  ...PEOPLE_AND_BODY_EMOJIS,
-  ...TRANSPORT_EMOJIS,
-  ...OBJECT_EMOJIS,
-  ...NATURE_EMOJIS,
-  ...FOOD_EMOJIS,
-  ...PLACES_EMOJIS
-};
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  WORD_EMOJIS, 
+  getEmojisByDifficulty 
+} from './data/emoji';
 
 // Add a CSS animation for the tile zoom effect
 const zoomToDestinationKeyframes = `
@@ -169,8 +76,10 @@ function App() {
   const [currentGameEmoji, setCurrentGameEmoji] = useState('');
   const [showHints, setShowHints] = useState(true);
   const [incorrectTiles, setIncorrectTiles] = useState([]);
-  const [difficultyLevel, setDifficultyLevel] = useState('all'); // 'all', 'easy', 'medium', or 'hard'
-  const [useUppercase, setUseUppercase] = useState(true); // New state for letter case toggle
+  const [difficultyLevel, setDifficultyLevel] = useState('easy'); // Changed from 'all' to 'easy'
+  const [useUppercase, setUseUppercase] = useState(false); // Changed default to lowercase
+  const [inputMode, setInputMode] = useState('tap'); // 'tap' or 'type'
+  const [showSettings, setShowSettings] = useState(false); // New state for settings panel
   
   // Create the full alphabet
   const alphabet = 'abcdefghijklmnopqrstuvwxyz';
@@ -387,6 +296,34 @@ function App() {
     setUseUppercase(prev => !prev);
   };
 
+  const toggleInputMode = () => {
+    setInputMode(prev => prev === 'tap' ? 'type' : 'tap');
+  };
+  
+  // Add a new function to handle text input changes
+  const handleTextInput = (text) => {
+    // Convert the text to an array of tiles
+    const newTiles = text.split('').map(letter => {
+      // Skip non-alphabetic characters
+      if (!/[a-zA-Z]/.test(letter)) return null;
+      return `${letter.toLowerCase()}-${Date.now() + Math.random() * 1000}`;
+    }).filter(Boolean); // Remove null values
+    
+    // Limit to 12 tiles
+    const limitedTiles = newTiles.slice(0, 12);
+    
+    // Update the placed tiles
+    setPlacedTiles(limitedTiles);
+    
+    // Reset incorrect tiles
+    setIncorrectTiles([]);
+  };
+
+  // Add a function to toggle settings panel
+  const toggleSettings = () => {
+    setShowSettings(prev => !prev);
+  };
+
   return (
     <>
       {/* Add the animation style to the document */}
@@ -411,17 +348,55 @@ function App() {
         userSelect: 'none',          /* Non-prefixed version */
         touchAction: 'manipulation', /* Disable double-tap to zoom */
       }}>
-        <h1 style={{ 
-          color: '#FF6B6B', 
-          textAlign: 'center',
-          fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', // Responsive font size
-          textShadow: '2px 2px 0px #FFE66D',
-          margin: '0.5rem 0' // Add margin for better spacing on mobile
+        {/* Header with title and settings button */}
+        <div style={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          position: 'relative',
+          maxWidth: '800px', // Match content width
+          margin: '0 auto', // Center header
+          padding: '0 10px', // prevent touching edges on small screens
         }}>
-          Phonics {gameMode === 'playground' ? 'Playground' : 'Game'}
-        </h1>
+          <h1 style={{ 
+            color: '#FF6B6B', 
+            textAlign: 'center',
+            fontSize: 'clamp(1.8rem, 5vw, 2.5rem)', // Responsive font size
+            textShadow: '2px 2px 0px #FFE66D',
+            margin: '0.5rem 0', // better spacing on mobile?
+            flex: 1, // title takes up all available space
+          }}>
+            Phonics {gameMode === 'playground' ? 'Playground' : 'Game'}
+          </h1>
+          
+          {/* Settings gear button */}
+          <button
+            onClick={toggleSettings}
+            style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+              backgroundColor: '#FFE66D',
+              border: 'none',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              fontSize: '1.5rem',
+              cursor: 'pointer',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              transition: 'all 0.2s ease',
+              marginLeft: '10px', // Space between title and button
+              color: '#333',
+              flexShrink: 0, // Prevent the button from shrinking on small screens
+            }}
+            aria-label="Settings"
+          >
+            ⚙️
+          </button>
+        </div>
         
-        {/* Mode toggle */}
+        {/* Mode toggle. Outside settings as I consider it a "primary control" */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
@@ -446,131 +421,14 @@ function App() {
             {gameMode === 'playground' ? '🎮 Switch to Game Mode' : '🏠 Switch to Playground'}
           </button>
           
-          {gameMode === 'game' && (
-            <button
-              onClick={toggleHints}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: showHints ? '#45B7B8' : '#FFE66D',
-                color: showHints ? 'white' : '#333',
-                border: 'none',
-                borderRadius: '50px',
-                fontSize: 'clamp(0.8rem, 3vw, 1rem)',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                boxShadow: '0 2px 0 rgba(0,0,0,0.1)',
-                transition: 'all 0.1s ease',
-              }}
-            >
-              {showHints ? '🔍 Hide Hints' : '💡 Show Hints'}
-            </button>
-          )}
-          
-          {/* Case toggle slider */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}>
-            {/* Lowercase label */}
-            <span style={{
-              fontSize: 'clamp(0.7rem, 2.5vw, 0.9rem)',
-              fontWeight: 'bold',
-              color: useUppercase ? '#888' : '#333',
-              userSelect: 'none',
-            }}>
-              🔡 abc
-            </span>
-            
-            {/* Toggle switch container */}
-            <div 
-              onClick={toggleCase}
-              style={{
-                width: '50px',
-                height: '26px',
-                backgroundColor: useUppercase ? '#45B7B8' : '#e0e0e0',
-                borderRadius: '50px',
-                position: 'relative',
-                cursor: 'pointer',
-                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              {/* Toggle switch thumb */}
-              <div
-                style={{
-                  position: 'absolute',
-                  width: '22px',
-                  height: '22px',
-                  borderRadius: '50%',
-                  backgroundColor: 'white',
-                  top: '2px',
-                  left: useUppercase ? '26px' : '2px',
-                  transition: 'left 0.2s ease',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                }}
-              />
-            </div>
-            
-            {/* Uppercase label */}
-            <span style={{
-              fontSize: 'clamp(0.7rem, 2.5vw, 0.9rem)',
-              fontWeight: 'bold',
-              color: useUppercase ? '#333' : '#888',
-              userSelect: 'none',
-            }}>
-              🔠 ABC
-            </span>
-          </div>
         </div>
-        
-        {/* Difficulty selector */}
-        {gameMode === 'game' && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            flexWrap: 'wrap',
-            marginTop: '-0.5rem'
-          }}>
-            <span style={{ 
-              fontSize: 'clamp(0.8rem, 3vw, 1rem)',
-              fontWeight: 'bold',
-              color: '#333',
-              alignSelf: 'center'
-            }}>
-              Difficulty:
-            </span>
-            {['all', 'easy', 'medium', 'hard'].map(level => (
-              <button
-                key={level}
-                onClick={() => handleDifficultyChange(level)}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: difficultyLevel === level ? '#FF6B6B' : '#FFE66D',
-                  color: difficultyLevel === level ? 'white' : '#333',
-                  border: 'none',
-                  borderRadius: '50px',
-                  fontSize: 'clamp(0.7rem, 2.5vw, 0.9rem)',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 0 rgba(0,0,0,0.1)',
-                  transition: 'all 0.1s ease',
-                  textTransform: 'capitalize'
-                }}
-              >
-                {level === 'all' ? 'All Levels' : level}
-              </button>
-            ))}
-          </div>
-        )}
         
         <div style={{
           width: '100%',
           maxWidth: '800px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.5rem' // Reduced gap for mobile
+          gap: '0.6rem'
         }}>
           {gameMode === 'game' && (
             <div style={{
@@ -578,15 +436,15 @@ function App() {
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '1rem',
-              padding: '1rem',
+              gap: '0.5rem', // Reduced gap from 1rem
+              padding: '0.4rem 0.6rem', // Reduced padding from 0.8rem
               backgroundColor: 'white',
               borderRadius: '20px',
               boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
               border: '3px solid #FFE66D',
               flexWrap: 'wrap',
             }}>
-              <div style={{ fontSize: '4rem' }}>{currentGameEmoji}</div>
+              <div style={{ fontSize: '4rem', margin: '0', lineHeight: '1' }}>{currentGameEmoji}</div>
               <button
                 onClick={() => {
                   const utterance = new SpeechSynthesisUtterance(currentGameWord);
@@ -618,6 +476,8 @@ function App() {
             showHints={showHints}
             incorrectTiles={incorrectTiles}
             useUppercase={useUppercase}
+            inputMode={inputMode}
+            onTextInput={handleTextInput}
           />
           
           <div style={{
@@ -717,7 +577,326 @@ function App() {
           />
         </div>
         
-        {/* Modal */}
+        {/* Settings Panel */}
+        {showSettings && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            width: '300px',
+            height: '100%',
+            backgroundColor: 'white',
+            boxShadow: '-5px 0 15px rgba(0,0,0,0.1)',
+            zIndex: 100,
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px',
+            animation: 'slideIn 0.3s ease-out',
+            overflowY: 'auto',
+          }}>
+            {/* Settings Header */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '2px solid #FFE66D',
+              paddingBottom: '10px',
+            }}>
+              <h2 style={{ 
+                margin: 0, 
+                color: '#45B7B8',
+                fontSize: '1.5rem',
+              }}>
+                Settings ⚙️
+              </h2>
+              <button
+                onClick={toggleSettings}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: '#FF6B6B',
+                }}
+                aria-label="Close settings"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Game Mode Settings */}
+            {gameMode === 'game' && (
+              <>
+                {/* Show/Hide Hints Toggle - Moved from main UI */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                }}>
+                  <h3 style={{ 
+                    margin: 0, 
+                    color: '#333',
+                    fontSize: '1.2rem',
+                  }}>
+                    Hints
+                  </h3>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px',
+                    backgroundColor: '#f0f0f0',
+                    borderRadius: '8px',
+                  }}>
+                    <span style={{
+                      fontSize: '1rem',
+                      fontWeight: showHints ? 'bold' : 'normal',
+                      color: showHints ? '#333' : '#888',
+                      userSelect: 'none',
+                    }}>
+                      💡 Show Hints
+                    </span>
+                    
+                    {/* Toggle switch container */}
+                    <div 
+                      onClick={toggleHints}
+                      style={{
+                        width: '50px',
+                        height: '26px',
+                        backgroundColor: showHints ? '#45B7B8' : '#e0e0e0',
+                        borderRadius: '50px',
+                        position: 'relative',
+                        cursor: 'pointer',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      {/* Toggle switch thumb */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          width: '22px',
+                          height: '22px',
+                          borderRadius: '50%',
+                          backgroundColor: 'white',
+                          top: '2px',
+                          left: showHints ? '26px' : '2px',
+                          transition: 'left 0.2s ease',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Difficulty Settings */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                }}>
+                  <h3 style={{ 
+                    margin: 0, 
+                    color: '#333',
+                    fontSize: '1.2rem',
+                  }}>
+                    Difficulty Level
+                  </h3>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                  }}>
+                    {['all', 'easy', 'medium', 'hard'].map(level => (
+                      <button
+                        key={level}
+                        onClick={() => handleDifficultyChange(level)}
+                        style={{
+                          padding: '8px 12px',
+                          backgroundColor: difficultyLevel === level ? '#FF6B6B' : '#f0f0f0',
+                          color: difficultyLevel === level ? 'white' : '#333',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '1rem',
+                          fontWeight: difficultyLevel === level ? 'bold' : 'normal',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <span style={{
+                          display: 'inline-block',
+                          width: '20px',
+                          height: '20px',
+                          borderRadius: '50%',
+                          backgroundColor: difficultyLevel === level ? 'white' : '#ddd',
+                          marginRight: '10px',
+                          border: difficultyLevel === level ? '2px solid white' : '2px solid #ccc',
+                        }}></span>
+                        {level === 'all' ? 'All Levels' : level.charAt(0).toUpperCase() + level.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+            
+            {/* Letter Case Toggle */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+            }}>
+              <h3 style={{ 
+                margin: 0, 
+                color: '#333',
+                fontSize: '1.2rem',
+              }}>
+                Letter Case
+              </h3>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px',
+                backgroundColor: '#f0f0f0',
+                borderRadius: '8px',
+              }}>
+                {/* Lowercase label */}
+                <span style={{
+                  fontSize: '1rem',
+                  fontWeight: useUppercase ? 'normal' : 'bold',
+                  color: useUppercase ? '#888' : '#333',
+                  userSelect: 'none',
+                }}>
+                  🔡 abc
+                </span>
+                
+                {/* Toggle switch container */}
+                <div 
+                  onClick={toggleCase}
+                  style={{
+                    width: '50px',
+                    height: '26px',
+                    backgroundColor: useUppercase ? '#45B7B8' : '#e0e0e0',
+                    borderRadius: '50px',
+                    position: 'relative',
+                    cursor: 'pointer',
+                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {/* Toggle switch thumb */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      width: '22px',
+                      height: '22px',
+                      borderRadius: '50%',
+                      backgroundColor: 'white',
+                      top: '2px',
+                      left: useUppercase ? '26px' : '2px',
+                      transition: 'left 0.2s ease',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                    }}
+                  />
+                </div>
+                
+                {/* Uppercase label */}
+                <span style={{
+                  fontSize: '1rem',
+                  fontWeight: useUppercase ? 'bold' : 'normal',
+                  color: useUppercase ? '#333' : '#888',
+                  userSelect: 'none',
+                }}>
+                  🔠 ABC
+                </span>
+              </div>
+            </div>
+            
+            {/* Input Mode Toggle */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+            }}>
+              <h3 style={{ 
+                margin: 0, 
+                color: '#333',
+                fontSize: '1.2rem',
+              }}>
+                Input Mode
+              </h3>
+              <div style={{
+                display: 'flex',
+                gap: '10px',
+              }}>
+                <button
+                  onClick={() => setInputMode('tap')}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    backgroundColor: inputMode === 'tap' ? '#9C27B0' : '#f0f0f0',
+                    color: inputMode === 'tap' ? 'white' : '#333',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '5px',
+                  }}
+                >
+                  <span style={{ fontSize: '1.5rem' }}>👆</span>
+                  Tap Mode
+                </button>
+                <button
+                  onClick={() => setInputMode('type')}
+                  style={{
+                    flex: 1,
+                    padding: '10px',
+                    backgroundColor: inputMode === 'type' ? '#9C27B0' : '#f0f0f0',
+                    color: inputMode === 'type' ? 'white' : '#333',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '5px',
+                  }}
+                >
+                  <span style={{ fontSize: '1.5rem' }}>⌨️</span>
+                  Type Mode
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Overlay to close settings when clicking outside */}
+        {showSettings && (
+          <div 
+            onClick={toggleSettings}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'rgba(0,0,0,0.3)',
+              zIndex: 99,
+            }}
+          />
+        )}
+        
+        {/* Word Modal - Adding back the modal that was removed */}
         {showModal && (
           <div style={{
             position: 'fixed',
@@ -756,9 +935,11 @@ function App() {
                 color: '#FF6B6B',
                 margin: 0,
                 textAlign: 'center',
-                textTransform: 'uppercase',
               }}>
-                {gameMode === 'playground' ? currentWord : currentGameWord}
+                {gameMode === 'playground' 
+                  ? (useUppercase ? currentWord.toUpperCase() : currentWord.toLowerCase())
+                  : (useUppercase ? currentGameWord.toUpperCase() : currentGameWord.toLowerCase())
+                }
               </h2>
               
               {/* Display difficulty badge */}
@@ -814,6 +995,11 @@ function App() {
             50% { box-shadow: 0 0 15px rgba(255,107,107,0.8); }
             100% { box-shadow: 0 0 5px rgba(255,107,107,0.5); }
           }
+          
+          @keyframes slideIn {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(0); }
+          }
         `}
       </style>
     </>
@@ -848,10 +1034,10 @@ function AlphabetTileGrid({ alphabet, onAddTile, useUppercase }) {
     <div style={{
       display: 'grid',
       gridTemplateColumns: isSmallScreen 
-        ? 'repeat(auto-fill, minmax(60px, 1fr))'
-        : 'repeat(auto-fill, minmax(80px, 1fr))',
-      gap: isSmallScreen ? '0.5rem' : '1rem',
-      padding: isSmallScreen ? '1rem' : '1.5rem',
+        ? 'repeat(auto-fill, minmax(50px, 1fr))'
+        : 'repeat(auto-fill, minmax(65px, 1fr))',
+      gap: isSmallScreen ? '0.3rem' : '0.6rem',
+      padding: isSmallScreen ? '0.8rem' : '1.2rem',
       background: 'white',
       borderRadius: '20px',
       boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
@@ -874,7 +1060,7 @@ function AlphabetTileGrid({ alphabet, onAddTile, useUppercase }) {
 
 // Simplified LetterTile without drag functionality
 function LetterTile({ letter, isSmallScreen, onAddTile, onSpeak, isSpeaking, useUppercase }) {
-  const size = isSmallScreen ? '60px' : '70px';
+  const size = isSmallScreen ? '50px' : '60px';
 
   const handleTileClick = () => {
     // Speak the letter name when tapped
@@ -894,11 +1080,11 @@ function LetterTile({ letter, isSmallScreen, onAddTile, onSpeak, isSpeaking, use
         width: size,
         height: size,
         backgroundColor: isSpeaking ? '#FFA726' : '#FFE66D', // Highlight when speaking
-        borderRadius: '12px',
+        borderRadius: '10px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: isSmallScreen ? '2rem' : '2.5rem',
+        fontSize: isSmallScreen ? '1.6rem' : '2rem',
         fontWeight: 'bold',
         color: '#333333',
         cursor: 'pointer',
@@ -906,13 +1092,13 @@ function LetterTile({ letter, isSmallScreen, onAddTile, onSpeak, isSpeaking, use
         WebkitUserSelect: 'none',
         WebkitTouchCallout: 'none',
         touchAction: 'manipulation',
-        border: isSpeaking ? '3px solid #FF6B6B' : '3px solid rgba(255,255,255,0.5)',
-        boxShadow: isSpeaking ? '0 0 10px rgba(255,107,107,0.7)' : '0 4px 0 rgba(0,0,0,0.1)',
+        border: isSpeaking ? '3px solid #FF6B6B' : '2px solid rgba(255,255,255,0.5)',
+        boxShadow: isSpeaking ? '0 0 10px rgba(255,107,107,0.7)' : '0 3px 0 rgba(0,0,0,0.1)',
         transition: 'all 0.2s ease',
         animation: isSpeaking ? 'letterPulse 1s infinite' : 'none',
         transform: isSpeaking ? 'scale(1.05)' : 'scale(1)',
         ':active': {
-          transform: 'translateY(4px)',
+          transform: 'translateY(3px)',
           boxShadow: '0 0 0 rgba(0,0,0,0.1)',
         }
       }}
@@ -923,8 +1109,25 @@ function LetterTile({ letter, isSmallScreen, onAddTile, onSpeak, isSpeaking, use
 }
 
 // Simplified WordArea without drag functionality
-function WordArea({ placedTiles, onRemoveTile, gameMode, targetWord, showHints, incorrectTiles, useUppercase }) {
+function WordArea({ placedTiles, onRemoveTile, gameMode, targetWord, showHints, incorrectTiles, useUppercase, inputMode, onTextInput }) {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const [inputText, setInputText] = useState('');
+  const inputRef = useRef(null);
+  
+  // Update inputText when placedTiles changes (for synchronization)
+  useEffect(() => {
+    if (inputMode === 'type') {
+      const text = placedTiles.map(id => id.split('-')[0]).join('');
+      setInputText(text);
+    }
+  }, [placedTiles, inputMode]);
+  
+  // Focus the input field when switching to type mode
+  useEffect(() => {
+    if (inputMode === 'type' && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [inputMode]);
   
   useEffect(() => {
     const checkScreenSize = () => {
@@ -952,18 +1155,18 @@ function WordArea({ placedTiles, onRemoveTile, gameMode, targetWord, showHints, 
         <div
           key={`ghost-${index}`}
           style={{
-            width: isSmallScreen ? '60px' : '70px',
-            height: isSmallScreen ? '60px' : '70px',
+            width: isSmallScreen ? '50px' : '60px',
+            height: isSmallScreen ? '50px' : '60px',
             backgroundColor: 'transparent',
-            borderRadius: '12px',
+            borderRadius: '10px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: isSmallScreen ? '2rem' : '2.5rem',
+            fontSize: isSmallScreen ? '1.6rem' : '2rem',
             fontWeight: 'bold',
             color: 'rgba(200, 200, 200, 0.3)',
-            border: '3px dashed rgba(200, 200, 200, 0.3)',
-            margin: '0 4px',
+            border: '2px dashed rgba(200, 200, 200, 0.3)',
+            margin: '0 3px',
           }}
         >
           {useUppercase ? letter.toUpperCase() : letter.toLowerCase()}
@@ -971,19 +1174,41 @@ function WordArea({ placedTiles, onRemoveTile, gameMode, targetWord, showHints, 
       );
     });
   };
+  
+  const handleInputChange = (e) => {
+    const text = e.target.value;
+    
+    // Filter out non-alphabetic characters
+    const filteredText = text.replace(/[^a-zA-Z]/g, '');
+    
+    // Limit to 12 characters
+    const limitedText = filteredText.slice(0, 12);
+    
+    setInputText(limitedText);
+    onTextInput(limitedText);
+  };
+
+  // Get placeholder text based on game mode
+  const getPlaceholderText = () => {
+    if (gameMode === 'game' && targetWord) {
+      return `Type "${useUppercase ? targetWord.toUpperCase() : targetWord}"`;
+    } else {
+      return "Type to add letters";
+    }
+  };
 
   return (
     <div 
       style={{
-        minHeight: isSmallScreen ? '120px' : '150px', // Fixed height to prevent layout shifts
-        height: gameMode === 'game' ? (isSmallScreen ? '120px' : '150px') : 'auto', // Fixed height in game mode
+        minHeight: isSmallScreen ? '90px' : '110px', // Further reduced height
+        height: gameMode === 'game' ? (isSmallScreen ? '90px' : '110px') : 'auto', // Further reduced height in game mode
         backgroundColor: 'white',
-        border: '4px dashed #FFE66D',
-        borderRadius: '20px',
+        border: inputMode === 'type' ? '3px solid #9C27B0' : '3px dashed #FFE66D', // Thinner border
+        borderRadius: '16px',
         display: 'flex',
         alignItems: 'center',
-        padding: isSmallScreen ? '1rem' : '1.5rem',
-        gap: '0.5rem',
+        padding: isSmallScreen ? '0.5rem' : '0.8rem', // Further reduced padding
+        gap: '0.3rem', // Further reduced gap
         position: 'relative',
         flexWrap: 'wrap',
         overflow: 'auto', // Add scrolling if content overflows
@@ -991,27 +1216,58 @@ function WordArea({ placedTiles, onRemoveTile, gameMode, targetWord, showHints, 
       role="region" 
       aria-label="Letter tiles area"
     >
-      {gameMode === 'game' && showHints && placedTiles.length === 0 ? (
-        // Show ghost tiles when in game mode with hints and no tiles placed yet
-        renderGhostTiles()
+      {inputMode === 'type' ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputText}
+          onChange={handleInputChange}
+          placeholder={getPlaceholderText()}
+          style={{
+            width: '100%',
+            height: '100%',
+            background: 'transparent',
+            border: 'none',
+            outline: 'none',
+            fontSize: isSmallScreen ? '1.6rem' : '2rem',
+            fontWeight: 'bold',
+            color: '#333333',
+            textAlign: 'center',
+            fontFamily: 'inherit',
+            textTransform: useUppercase ? 'uppercase' : 'lowercase',
+          }}
+          maxLength={12}
+          aria-label="Type letters here"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
+          spellCheck="false"
+        />
       ) : (
-        // Show placed tiles
-        placedTiles.map((tileId, index) => (
-          <PlacedTile 
-            key={`${tileId}-${index}`}
-            letter={tileId.split('-')[0]}
-            index={index}
-            onRemoveTile={onRemoveTile}
-            isSmallScreen={isSmallScreen}
-            incorrect={incorrectTiles.includes(index)}
-            useUppercase={useUppercase}
-          />
-        ))
-      )}
-      
-      {/* Show ghost tiles after the placed tiles in game mode */}
-      {gameMode === 'game' && showHints && placedTiles.length > 0 && placedTiles.length < targetWord.length && (
-        renderGhostTiles()
+        <>
+          {gameMode === 'game' && showHints && placedTiles.length === 0 ? (
+            // Show ghost tiles when in game mode with hints and no tiles placed yet
+            renderGhostTiles()
+          ) : (
+            // Show placed tiles
+            placedTiles.map((tileId, index) => (
+              <PlacedTile 
+                key={`${tileId}-${index}`}
+                letter={tileId.split('-')[0]}
+                index={index}
+                onRemoveTile={onRemoveTile}
+                isSmallScreen={isSmallScreen}
+                incorrect={incorrectTiles.includes(index)}
+                useUppercase={useUppercase}
+              />
+            ))
+          )}
+          
+          {/* Show ghost tiles after the placed tiles in game mode */}
+          {gameMode === 'game' && showHints && placedTiles.length > 0 && placedTiles.length < targetWord.length && (
+            renderGhostTiles()
+          )}
+        </>
       )}
     </div>
   );
@@ -1029,7 +1285,7 @@ function PlacedTile({ letter, index, onRemoveTile, isSmallScreen, incorrect, use
     return () => clearTimeout(timer);
   }, []);
   
-  const size = isSmallScreen ? '60px' : '70px';
+  const size = isSmallScreen ? '50px' : '60px';
 
   return (
     <div
@@ -1038,11 +1294,11 @@ function PlacedTile({ letter, index, onRemoveTile, isSmallScreen, incorrect, use
         width: size,
         height: size,
         backgroundColor: incorrect ? '#FF6B6B' : '#D7C0E0',
-        borderRadius: '12px',
+        borderRadius: '10px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: isSmallScreen ? '2rem' : '2.5rem',
+        fontSize: isSmallScreen ? '1.6rem' : '2rem',
         fontWeight: 'bold',
         color: '#333333',
         cursor: 'pointer',
@@ -1050,13 +1306,13 @@ function PlacedTile({ letter, index, onRemoveTile, isSmallScreen, incorrect, use
         WebkitUserSelect: 'none',
         WebkitTouchCallout: 'none',
         touchAction: 'manipulation',
-        boxShadow: '0 4px 0 rgba(0,0,0,0.1)',
-        border: '3px solid rgba(255,255,255,0.5)',
+        boxShadow: '0 3px 0 rgba(0,0,0,0.1)',
+        border: '2px solid rgba(255,255,255,0.5)',
         // Apply animation for new tiles
         animation: isNew ? 'zoomToDestination 0.3s ease-out' : 'none',
         transition: 'transform 0.1s ease',
         ':active': {
-          transform: 'translateY(4px)',
+          transform: 'translateY(3px)',
           boxShadow: '0 0 0 rgba(0,0,0,0.1)',
         }
       }}

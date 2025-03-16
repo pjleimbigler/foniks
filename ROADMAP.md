@@ -12,6 +12,19 @@
 - [ ] Toggle between letters and graphemes
 - [ ] Custom word/grapheme sets
 
+### UI Improvements
+- [x] Make tiles smaller to avoid having to scroll
+- [x] Implement settings panel with gear icon for secondary controls
+  - [x] difficulty selector
+  - [x] uppercase / lowercase toggle
+  - [x] input mode toggle
+- [ ] Reorganize primary action buttons for better visual hierarchy
+- [ ] Fix responsive layout for mobile devices
+  - [ ] Adjust button sizes and spacing for touch interfaces
+  - [ ] Optimize keyboard layout for different screen sizes
+- [ ] Create consistent visual styling across components
+- [ ] Add visual feedback for correct/incorrect answers
+
 ### Backend
 - [ ] Backend for account creation and progress tracking
 - [ ] Parent/teacher dashboard
